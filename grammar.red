@@ -19,8 +19,9 @@ printGrammar: function [grammar] [
 
     foreach variable rhs [
       if index > 0 [ prin " | " ]
-      either empty? variable [ prin "epsilon" ] [ prin variable ]
-
+      foreach varElem variable [
+        either empty? varElem [prin "epsilon"] [prin " " prin varElem prin " "]
+      ]
       index: index + 1
     ]
    print ""
@@ -44,6 +45,7 @@ addRule: function[grammar name rhs][
 
 addRule grammar "A" ["0"]
 addRule grammar "A" ["1"]
+addRule grammar "A" [""]
 addRule grammar "E" ["E" "*" "E"]
 addRule grammar "E" ["E" "/" "E"]
 
