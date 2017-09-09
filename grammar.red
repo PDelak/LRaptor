@@ -1,7 +1,8 @@
 Red []
 
 grammar: [
-  "S" [["E"]] "E" [["E" "+" "B"]]
+  "S" [["E"]] 
+  "E" [["E" "+" "B"]]
   "B" [["1"]]
 ]
 
@@ -45,4 +46,5 @@ addRule grammar "A" ["0"]
 addRule grammar "A" ["1"]
 addRule grammar "E" ["E" "*" "E"]
 addRule grammar "E" ["E" "/" "E"]
+
 printGrammar grammar
