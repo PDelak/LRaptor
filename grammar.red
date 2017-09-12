@@ -159,6 +159,19 @@ LR0Goto: function[LR0Items token grammar] [
   return LR0Closure gotoSet grammar
 ]
 
+tokens: function[grammar] [  
+  tokenSet: make block![]
+  foreach [lhs rhs] grammar [
+    append tokenSet lhs
+    foreach rule rhs [
+      foreach var rule [
+        append tokenSet var
+      ]
+    ]
+  ]
+  return unique tokenSet
+]
+
 {
   generate LR canonical collection items
 }
@@ -178,7 +191,8 @@ generateLR0ItemsSet: function[mainRule grammar stateCollection] [
   initialSet: make block![]
   append initialSet initialItem
   startItemSet: LR0Closure initialSet grammar
-  
+  openItems: make block![]
+
   printLR0Items startItemSet grammar
 ]
 
@@ -212,3 +226,7 @@ printLR0Items gotoResult grammar
 
 stateCollection: []
 generateLR0ItemsSet ["E" ["E" "*" "E"]] grammar stateCollection
+
+foreach token tokens grammar [
+  print token
+]
