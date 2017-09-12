@@ -140,6 +140,22 @@ LR0Closure: function [LR0Items grammar] [
   return resultSet
 ]
 
+LR0Goto: function[LR0Items token grammar] [
+  gotoSet: []
+  foreach item LR0Items [
+    rhs: select grammar item/ruleLHS
+    rule: pick rhs item/ruleRHSIndex
+    ruleLen: length? rule
+    if ruleLen < item/dotPosition [continue]
+    nextToken: pick rule item/dotPosition
+    if equal? nextToken token [
+       newItem: make item [ruleLHS: item/ruleLHS ruleRHSIndex: item/ruleRHSIndex dotPosition: item/dotPosition + 1]
+       append gotoSet newItem
+    ]
+  ]
+  return LR0Closure gotoSet grammar
+]
+
 addRule grammar "A" ["0"]
 addRule grammar "A" ["1"]
 addRule grammar "A" [""]
@@ -162,3 +178,8 @@ LR0Result: LR0Closure LR0Items1 grammar
 
 print "LR0closure:"
 printLR0Items LR0Result grammar
+
+print "LR0goto:"
+gotoResult: LR0Goto LR0Items1 "0" grammar 
+
+printLR0Items gotoResult grammar
