@@ -48,6 +48,9 @@ addRule: function[grammar name rhs][
   ]
 ]
 
+{
+  generate all LR0Items from given grammar
+}
 generateLR0Items: function[grammar] [
   LR0Items: []
 
@@ -102,8 +105,8 @@ printLR0Items: function [LR0Items grammar] [
 
 LR0Closure: function [LR0Items grammar] [
   
-  openSet: []
-  resultSet: []
+  openSet: make block![]
+  resultSet: make block![]
 
   append openSet LR0Items
   
@@ -141,7 +144,7 @@ LR0Closure: function [LR0Items grammar] [
 ]
 
 LR0Goto: function[LR0Items token grammar] [
-  gotoSet: []
+  gotoSet: make block![]
   foreach item LR0Items [
     rhs: select grammar item/ruleLHS
     rule: pick rhs item/ruleRHSIndex
@@ -154,6 +157,29 @@ LR0Goto: function[LR0Items token grammar] [
     ]
   ]
   return LR0Closure gotoSet grammar
+]
+
+{
+  generate LR canonical collection items
+}
+generateLR0ItemsSet: function[mainRule grammar stateCollection] [
+  
+  mainRuleLhs: first mainRule
+  mainRuleRhs: second mainRule
+  print mold mainRuleRhs
+  rhs: select grammar mainRuleLhs
+  index: make integer! 1
+  foreach e rhs [
+    if equal? e mainRuleRhs [ break ]
+    index: index + 1
+  ]  
+  initialItem: make item [ruleLHS: mainRuleLhs ruleRHSIndex: index dotPosition: 1]
+  
+  initialSet: make block![]
+  append initialSet initialItem
+  startItemSet: LR0Closure initialSet grammar
+  
+  printLR0Items startItemSet grammar
 ]
 
 addRule grammar "A" ["0"]
@@ -183,3 +209,6 @@ print "LR0goto:"
 gotoResult: LR0Goto LR0Items1 "0" grammar 
 
 printLR0Items gotoResult grammar
+
+stateCollection: []
+generateLR0ItemsSet ["E" ["E" "*" "E"]] grammar stateCollection
