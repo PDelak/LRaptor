@@ -267,9 +267,31 @@ generateLR0ItemsSet: function[mainRule grammar stateCollection] [
 
 serializeItemSet: function [grammar itemSet] [
   output: make string! ""
+
+  return output
 ]
 
-generateDot: function [] [
+generateDot: function [grammar stateCollection edgeSet] [
+  output: make string! ""
+  append output "digraph grammar {^/"
+  foreach edge edgeSet [
+    from: []
+    to: []
+    token: ""
+    append output "^""
+    append output serializeItemSet grammar from
+    append output "^"^/"
+    append output "->^/"
+    append output "^""
+    append output serializeItemSet grammar to
+    append output "^"^/"
+    append output "[label="
+    append output "^""
+    append output token
+    append output "^"]^/"
+  ]
+  append output "}^/"
+  return output
 ]
 
 ;addRule grammar "A" ["0"]
@@ -303,7 +325,9 @@ printLR0Items gotoResult grammar
 
 stateCollection: make StateCollection [ itemSetIds: make hash![] idToItemSets: make hash![] setId: make integer! 1 ]
 
-foreach edge generateLR0ItemsSet ["S" ["E"]] grammar stateCollection [
+edgeSet: generateLR0ItemsSet ["S" ["E"]] grammar stateCollection
+
+foreach edge edgeSet [
   print edge
 ]
 
@@ -318,4 +342,4 @@ foreach edge generateLR0ItemsSet ["S" ["E"]] grammar stateCollection [
 ;print checkItemSetExists LR0Result stateCollection
 ;print mold checkItemSetExistsById 1 stateCollection
 
-serializeItemSet grammar LR0Items1
+print generateDot grammar stateCollection edgeSet
