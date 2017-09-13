@@ -291,7 +291,7 @@ serializeLR0Items: function [LR0Items grammar] [
     if dotPos == item/dotPosition [ append output "." ]
 
     dotPos: 1
-    append output ""
+    append output "^/"
   ]
   return output
 ]
@@ -368,4 +368,4 @@ foreach edge edgeSet [
 ;print checkItemSetExists LR0Result stateCollection
 ;print mold checkItemSetExistsById 1 stateCollection
 
-print generateDot grammar stateCollection edgeSet
+write %grammar.dot generateDot grammar stateCollection edgeSet
