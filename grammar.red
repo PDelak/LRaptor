@@ -2,14 +2,48 @@ Red []
 
 grammar: [
   "S" [["E"]] 
-  "E" [["B" "+" "B"]]
-  "B" [["1"]]
+  "E" [["E" "+" "E"]["1"]]
 ]
 
 item: make object! [
   ruleLHS:
   ruleRHSIndex:
   dotPosition: none
+]
+
+StateCollection: make object! [
+  itemSetIds: make hash![]
+  idToItemSets: make hash![]
+  setId: make integer! 1
+]
+
+checkItemSetExists: function [itemSet stateCollection] [
+  ; there is convesion from object to string due to problem
+  ; with searching via object
+  ; actually I don't know if that's bug
+  ; or real limitation or my lack of knowledge how to 
+  ; use it correcly
+  return select stateCollection/itemSetIds to-string itemSet
+]
+
+checkItemSetExistsById: function [id stateCollection] [
+  return select stateCollection/idToItemSets id
+]
+
+addItemSet: function [itemSet stateCollection] [
+  entry: make block![]
+  ; as described in checkItemSetExists
+  ; itemSet object is converted to string forth and back
+  append/only entry to-string itemSet
+  append entry stateCollection/setId
+  append stateCollection/itemSetIds entry
+
+  entryIdToItemSet: make block![]
+  append entryIdToItemSet stateCollection/setId
+  append/only entryIdToItemSet itemSet
+  append stateCollection/idToItemSets entryIdToItemSet 
+
+  stateCollection/setId: stateCollection/setId + 1
 ]
 
 selectRule: function[grammar name] [
@@ -48,9 +82,8 @@ addRule: function[grammar name rhs][
   ]
 ]
 
-{
-  generate all LR0Items from given grammar
-}
+
+; generate all LR0Items from given grammar
 generateLR0Items: function[grammar] [
   LR0Items: []
 
@@ -103,6 +136,7 @@ printLR0Items: function [LR0Items grammar] [
   ]
 ]
 
+; closure of LR0 items 
 LR0Closure: function [LR0Items grammar] [
   
   openSet: make block![]
@@ -172,35 +206,77 @@ tokens: function[grammar] [
   return unique tokenSet
 ]
 
-{
-  generate LR canonical collection items
-}
+makeEdge: function [from to token] [
+  edge: make block![]
+  append edge from
+  append edge to
+  append edge token
+  return edge
+]
+
+
+; generate LR canonical collection items
 generateLR0ItemsSet: function[mainRule grammar stateCollection] [
   
+  edgeSet: make block![]
+
   mainRuleLhs: first mainRule
   mainRuleRhs: second mainRule
-  print mold mainRuleRhs
   rhs: select grammar mainRuleLhs
   index: make integer! 1
+  
   foreach e rhs [
     if equal? e mainRuleRhs [ break ]
     index: index + 1
   ]  
+  
   initialItem: make item [ruleLHS: mainRuleLhs ruleRHSIndex: index dotPosition: 1]
   
   initialSet: make block![]
   append initialSet initialItem
   startItemSet: LR0Closure initialSet grammar
+ 
+  addItemSet startItemSet stateCollection
+ 
   openItems: make block![]
 
-  printLR0Items startItemSet grammar
+  append/only openItems startItemSet
+  
+  while [not tail? openItems] [
+    itemSet: first openItems
+    remove openItems    
+    foreach token tokens grammar [
+      gotoSet: make block! []
+      gotoSet: LR0Goto itemSet token grammar
+    
+      if empty? gotoSet [continue]
+
+      if none? checkItemSetExists gotoSet stateCollection [
+        addItemSet gotoSet stateCollection        
+        append/only openItems gotoSet
+      ]
+      
+      from: checkItemSetExists itemSet stateCollection
+      to: checkItemSetExists gotoSet stateCollection
+
+      append/only edgeSet makeEdge from to token
+    ]    
+  ]
+  return edgeSet
 ]
 
-addRule grammar "A" ["0"]
-addRule grammar "A" ["1"]
-addRule grammar "A" [""]
-addRule grammar "E" ["E" "*" "E"]
-addRule grammar "E" ["E" "/" "E"]
+serializeItemSet: function [grammar itemSet] [
+  output: make string! ""
+]
+
+generateDot: function [] [
+]
+
+;addRule grammar "A" ["0"]
+;addRule grammar "A" ["1"]
+;addRule grammar "A" [""]
+;addRule grammar "E" ["E" "*" "E"]
+;addRule grammar "E" ["E" "/" "E"]
 
 printGrammar grammar
 
@@ -212,7 +288,7 @@ LR0Items: generateLR0Items grammar
 
 LR0Items1: []
 
-append LR0Items1 make item [ ruleLHS: "A" ruleRHSIndex: 1 dotPosition: 1 ]
+append LR0Items1 make item [ ruleLHS: "E" ruleRHSIndex: 2 dotPosition: 1 ]
 
 LR0Result: LR0Closure LR0Items1 grammar
 
@@ -220,13 +296,26 @@ print "LR0closure:"
 printLR0Items LR0Result grammar
 
 print "LR0goto:"
+;print mold LR0Items1
 gotoResult: LR0Goto LR0Items1 "0" grammar 
 
 printLR0Items gotoResult grammar
 
-stateCollection: []
-generateLR0ItemsSet ["E" ["E" "*" "E"]] grammar stateCollection
+stateCollection: make StateCollection [ itemSetIds: make hash![] idToItemSets: make hash![] setId: make integer! 1 ]
 
-foreach token tokens grammar [
-  print token
+foreach edge generateLR0ItemsSet ["S" ["E"]] grammar stateCollection [
+  print edge
 ]
+
+;print mold stateCollection
+
+;addItemSet LR0Result stateCollection
+;addItemSet LR0Result stateCollection
+
+;print mold stateCollection
+
+
+;print checkItemSetExists LR0Result stateCollection
+;print mold checkItemSetExistsById 1 stateCollection
+
+serializeItemSet grammar LR0Items1
