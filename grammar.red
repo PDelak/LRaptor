@@ -265,29 +265,55 @@ generateLR0ItemsSet: function[mainRule grammar stateCollection] [
   return edgeSet
 ]
 
-serializeItemSet: function [grammar itemSet] [
+; print all items exist in LR0Items
+serializeLR0Items: function [LR0Items grammar] [
   output: make string! ""
+  foreach item LR0Items [
+    append output item/ruleLHS
+    append output " -> "
+    rule: select grammar item/ruleLHS
+    rhs: pick rule item/ruleRHSIndex
+    dotPos: make integer! 1
+    foreach variable rhs [
+      if dotPos == item/dotPosition [
+        append output "."
+      ]
+      either empty? variable [append output " epsilon "] 
+      [ 
+        append output  " "
+        append output variable
+        append output " "
+      ]
+      dotPos: dotPos + 1
+    ]
 
+    ; condition for final item
+    if dotPos == item/dotPosition [ append output "." ]
+
+    dotPos: 1
+    append output ""
+  ]
   return output
 ]
+
 
 generateDot: function [grammar stateCollection edgeSet] [
   output: make string! ""
   append output "digraph grammar {^/"
   foreach edge edgeSet [
-    from: []
-    to: []
+    from: checkItemSetExistsById first edge stateCollection
+    to: checkItemSetExistsById second edge stateCollection
     token: ""
     append output "^""
-    append output serializeItemSet grammar from
+    append output serializeLR0Items from grammar 
     append output "^"^/"
     append output "->^/"
     append output "^""
-    append output serializeItemSet grammar to
+    append output serializeLR0Items to grammar 
     append output "^"^/"
     append output "[label="
     append output "^""
-    append output token
+    append output third edge
     append output "^"]^/"
   ]
   append output "}^/"
