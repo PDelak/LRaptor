@@ -4,11 +4,9 @@ Red [ Needs: 'View ]
 
 system/view/silent?: yes
 
-emptyGraph: {
-	digraph grammar {}
-}
-{#2C3339}
+emptyGraph: { digraph grammar {}}
 grammarTxt: {}
+
 previousGrammar: load grammarTxt
 
 editorView: [
@@ -40,7 +38,6 @@ editorView: [
 
 					append mainRule mainRuleLHS
 					append mainRule mainRuleRHS
-
 					prin "mainRule -> : "
 					print mold mainRule
 					
@@ -58,10 +55,9 @@ editorView: [
 				]
 			]
 		]		
-		attempt/safer [face/pane: layout/tight/only load {image graph}]                
+		attempt/safer [face/pane: layout/tight/only load {image graph loose}]                
 	]
 	return 
 ]
 
 view/flags editorView 'resize
-	
