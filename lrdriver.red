@@ -1,4 +1,7 @@
-Red []
+Red [
+  Title:  "Basic LR driver"
+  Author: "Przemyslaw Delewski"
+]
 
 #include %lrlibrary.red
 

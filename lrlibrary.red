@@ -1,5 +1,7 @@
-Red []
-
+Red [
+  Title:  "LR library - Bottom Up parsing engine"
+  Author: "Przemyslaw Delewski"
+]
 
 item: make object! [
   ruleLHS:
