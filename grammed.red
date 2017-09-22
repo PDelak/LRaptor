@@ -1,4 +1,8 @@
-Red [ Needs: 'View ]
+Red [
+	Title:   "Gammar Editor"
+	Author:  "Przemyslaw Delewski"
+	Needs:	 'View
+]
 
 #include %lrlibrary.red
 
@@ -38,7 +42,7 @@ generateGraph: function [grammar] [
 	return graph
 ]
 
-editorView: [
+editorView: layout[
 	title "Grammar Editor"
 	backdrop #2C3339
 	across
@@ -70,4 +74,51 @@ editorView: [
 	return 
 ]
 
-view/flags editorView 'resize
+lastSizeWin: 1x1
+lastSizeSource: 1x1
+lastSizeGraphPanel: 1x1
+started: 0
+
+scale: function [currentSize lastSize] [
+	result: make block![]
+	v1: make float! first currentSize 
+	v2: make float! first lastSize
+	append result v1 / v2
+	v1: make float! second currentSize 
+	v2: make float! second lastSize
+	append result v1 / v2
+	return result
+]
+
+editorView/flags: ['resize]
+
+editorView/actors: make face! [		
+		on-resize: func [f e] [
+			either started == 0 [
+				started: 1
+				lastSizeWin: f/size
+				lastSizeSource: f/pane/1/size
+				lastSizeGraphPanel: f/pane/2/size
+			]
+			[
+				currentWinSize: f/size
+				currentSourceSize: f/pane/1/size
+				currentGraphPanelSize: f/pane/2/size
+
+				currentScale: scale currentWinSize lastSizeWin
+
+				f/pane/1/size/x: to-integer make float! (first currentSourceSize) * (first currentScale) - 10 
+				f/pane/1/size/y: to-integer make float! (second currentSourceSize) * (second currentScale)
+				f/pane/2/size/x: to-integer make float! (first currentGraphPanelSize) * (first currentScale) + 10
+				f/pane/2/size/y: to-integer make float! (second currentGraphPanelSize) * (second currentScale)
+
+				f/pane/2/offset/x: to-integer make float! (first currentSourceSize) * (first currentScale) + 10
+				lastSizeWin: f/size
+				lastSizeSource: f/pane/1/size
+				lastSizeGraphPanel: f/pane/2/size
+			]
+		]
+]
+
+view editorView
+
