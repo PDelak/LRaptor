@@ -74,51 +74,20 @@ editorView: layout[
 	return 
 ]
 
-lastSizeWin: 1x1
-lastSizeSource: 1x1
-lastSizeGraphPanel: 1x1
-started: 0
-
-scale: function [currentSize lastSize] [
-	result: make block![]
-	v1: make float! first currentSize 
-	v2: make float! first lastSize
-	append result v1 / v2
-	v1: make float! second currentSize 
-	v2: make float! second lastSize
-	append result v1 / v2
-	return result
-]
-
 editorView/flags: ['resize]
 
 editorView/actors: make face! [		
-		on-resize: func [f e] [
-			either started == 0 [
-				started: 1
-				lastSizeWin: f/size
-				lastSizeSource: f/pane/1/size
-				lastSizeGraphPanel: f/pane/2/size
-			]
-			[
-				currentWinSize: f/size
-				currentSourceSize: f/pane/1/size
-				currentGraphPanelSize: f/pane/2/size
+		on-resize: func [f e] [            
+		        ; source area takes 40 percent of whole screen     
+				f/pane/1/size/x: f/size/x * 40 / 100
+				; y size is subtracted by 20
+				f/pane/1/size/y: f/size/y - 20
+				; graph panel takes 60 percent
+				f/pane/2/size/x: f/size/x * 60 / 100 - 25
+				f/pane/2/size/y: f/size/y - 20
 
-				currentScale: scale currentWinSize lastSizeWin
-
-				f/pane/1/size/x: to-integer make float! (first currentSourceSize) * (first currentScale) - 10 
-				f/pane/1/size/y: to-integer make float! (second currentSourceSize) * (second currentScale)
-				f/pane/2/size/x: to-integer make float! (first currentGraphPanelSize) * (first currentScale) + 10
-				f/pane/2/size/y: to-integer make float! (second currentGraphPanelSize) * (second currentScale)
-
-				f/pane/2/offset/x: to-integer make float! (first currentSourceSize) * (first currentScale) + 10
-				lastSizeWin: f/size
-				lastSizeSource: f/pane/1/size
-				lastSizeGraphPanel: f/pane/2/size
-			]
+				f/pane/2/offset/x: f/pane/1/offset/x + f/pane/1/size/x + 5			
 		]
 ]
 
 view editorView
-
