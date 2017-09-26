@@ -6,8 +6,6 @@ Red [
 
 #include %lrlibrary.red
 
-system/view/silent?: yes
-
 emptyGraph: { digraph grammar {}}
 grammarTxt: {}
 
@@ -53,7 +51,8 @@ editorView: layout[
 		color: hex-to-rgb #9EBACB
 	]
 
-	panel 500x500 #13181E  react [
+	graphPanel: panel 500x500 #13181E 
+	react [
 		print source/text
 		if not empty? source/text 
 		[               
@@ -71,10 +70,13 @@ editorView: layout[
 		]		
 		attempt/safer [face/pane: layout/tight/only load {image graph loose}]                
 	]
+
 	return 
 ]
 
 editorView/flags: ['resize]
+
+print mold editorView/pane/2
 
 editorView/actors: make face! [		
 		on-resize: func [f e] [            
@@ -86,7 +88,8 @@ editorView/actors: make face! [
 				f/pane/2/size/x: f/size/x * 60 / 100 - 25
 				f/pane/2/size/y: f/size/y - 20
 
-				f/pane/2/offset/x: f/pane/1/offset/x + f/pane/1/size/x + 5			
+				f/pane/2/offset/x: f/pane/1/offset/x + f/pane/1/size/x + 5	
+				append grammarTxt ""		
 		]
 ]
 
