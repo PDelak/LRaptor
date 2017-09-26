@@ -3,18 +3,29 @@ Red [
   Author: "Przemyslaw Delewski"
 ]
 
+; item represent LR0 item
+; LR0 item is a grammar rule
+; and dot position
+; Grammar rule is identified by two things
+; ruleLHS - a key in hashtable
+; and ruleRHSIndex - right hand side of rule can contain 
+; several alternatives
 item: make object! [
   ruleLHS:
   ruleRHSIndex:
   dotPosition: none
 ]
 
+; state collection object
+; contains mappings between itemSet and ids
+; and ids and item sets
 StateCollection: make object! [
   itemSetIds: make hash![]
   idToItemSets: make hash![]
   setId: make integer! 1
 ]
 
+; return wether itemSet exists already in stateCollection
 checkItemSetExists: function [itemSet stateCollection] [
   ; there is convesion from object to string due to problem
   ; with searching via object
@@ -24,10 +35,12 @@ checkItemSetExists: function [itemSet stateCollection] [
   return select stateCollection/itemSetIds to-string itemSet
 ]
 
+; check wether item set identified by id exists already in stateCollection
 checkItemSetExistsById: function [id stateCollection] [
   return select stateCollection/idToItemSets id
 ]
 
+; adds item set to stateCollection
 addItemSet: function [itemSet stateCollection] [
   entry: make block![]
   ; as described in checkItemSetExists
@@ -44,11 +57,13 @@ addItemSet: function [itemSet stateCollection] [
   stateCollection/setId: stateCollection/setId + 1
 ]
 
+; selects specific grammar rule identified by name from grammar
 selectRule: function[grammar name] [
   rule: select grammar name
   return rule 
 ]
 
+; dumps grammar
 printGrammar: function [grammar] [
   foreach [lhs rhs] grammar [
     prin [lhs]
@@ -66,6 +81,7 @@ printGrammar: function [grammar] [
   ]
 ]
 
+; adds new rule to grammar
 addRule: function[grammar name rhs][    
   presentRule: selectRule grammar name
   either not empty? presentRule [
@@ -175,6 +191,8 @@ LR0Closure: function [LR0Items grammar] [
   return resultSet
 ]
 
+; LR0 goto function takes LR0 item set token and grammar
+; and return another item set 
 LR0Goto: function[LR0Items token grammar] [
   gotoSet: make block![]
   foreach item LR0Items [
@@ -191,6 +209,7 @@ LR0Goto: function[LR0Items token grammar] [
   return LR0Closure gotoSet grammar
 ]
 
+; get grammar and return all tokens
 tokens: function[grammar] [  
   tokenSet: make block![]
   foreach [lhs rhs] grammar [
@@ -204,6 +223,8 @@ tokens: function[grammar] [
   return unique tokenSet
 ]
 
+; helper function used to build an edge 
+; from item set to item set via token
 makeEdge: function [from to token] [
   edge: make block![]
   append edge from
@@ -294,7 +315,8 @@ serializeLR0Items: function [LR0Items grammar] [
   return output
 ]
 
-
+; generate graphviz dot graph representation
+; by taking grammar stateCollection and edgeSet
 generateDot: function [grammar stateCollection edgeSet] [
   output: make string! ""
   append output "digraph grammar {^/"
