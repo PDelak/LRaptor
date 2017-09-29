@@ -4,7 +4,7 @@ Red [
 	Needs:	 'View
 ]
 
-#include %lrlibrary.red
+#include %lr-library.red
 #include %grammar-parser.red
 
 empty-graph: { digraph grammar {}}

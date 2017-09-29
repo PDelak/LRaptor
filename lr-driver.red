@@ -3,7 +3,7 @@ Red [
   Author: "Przemyslaw Delewski"
 ]
 
-#include %lrlibrary.red
+#include %lr-library.red
 
 grammar: make block! [
   "S" [["E"]] 
