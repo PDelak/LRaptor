@@ -1,4 +1,7 @@
-Red []    
+Red [
+  Title:   "Grammar parser driver"
+  Author:  "Przemyslaw Delewski"
+]    
 
 #include %grammar-parser.red
 
