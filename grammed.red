@@ -5,6 +5,7 @@ Red [
 ]
 
 #include %lrlibrary.red
+#include %grammar-parser.red
 
 emptyGraph: { digraph grammar {}}
 grammarTxt: {}
@@ -53,10 +54,23 @@ editorView: layout[
 
 	graphPanel: panel 500x500 #13181E 
 	react [
+		grammar: []	
 		print source/text
+		if (empty? source/text) and (not equal? previousGrammar grammar ) [
+			
+			graph: generateGraph grammar                                        
+			previousGrammar: copy grammar
+		]
 		if not empty? source/text 
 		[               
-			grammar: try [load source/text]
+			internal-repr: make block![]
+			result: parse-grammar source/text internal-repr
+			print result
+			if result = true [
+				print mold internal-repr
+				grammar: internal-repr
+			]
+            
 			either error? grammar [ print "error" ] 
 			[
 				print "good"
