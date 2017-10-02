@@ -11,60 +11,60 @@ Red [
 ; and ruleRHSIndex - right hand side of rule can contain 
 ; several alternatives
 item: make object! [
-  ruleLHS:
-  ruleRHSIndex:
-  dotPosition: none
+  rule-lhs:
+  rule-rhs-index:
+  dot-position: none
 ]
 
 ; state collection object
-; contains mappings between itemSet and ids
+; contains mappings between item-set and ids
 ; and ids and item sets
-StateCollection: make object! [
-  itemSetIds: make hash![]
-  idToItemSets: make hash![]
-  setId: make integer! 1
+state-collection: make object! [
+  item-set-ids: make hash![]
+  id-to-item-sets: make hash![]
+  set-id: make integer! 1
 ]
 
-; return wether itemSet exists already in stateCollection
-checkItemSetExists: function [itemSet stateCollection] [
+; return wether item-set exists already in state-collection
+check-item-set-exists: function [item-set state-collection] [
   ; there is convesion from object to string due to problem
   ; with searching via object
   ; actually I don't know if that's bug
   ; or real limitation or my lack of knowledge how to 
   ; use it correcly
-  return select stateCollection/itemSetIds to-string itemSet
+  return select state-collection/item-set-ids to-string item-set
 ]
 
-; check wether item set identified by id exists already in stateCollection
-checkItemSetExistsById: function [id stateCollection] [
-  return select stateCollection/idToItemSets id
+; check wether item set identified by id exists already in state-collection
+check-item-set-exists-by-id: function [id state-collection] [
+  return select state-collection/id-to-item-sets id
 ]
 
-; adds item set to stateCollection
-addItemSet: function [itemSet stateCollection] [
+; adds item set to state-collection
+add-item-set: function [item-set state-collection] [
   entry: make block![]
   ; as described in checkItemSetExists
   ; itemSet object is converted to string forth and back
-  append/only entry to-string itemSet
-  append entry stateCollection/setId
-  append stateCollection/itemSetIds entry
+  append/only entry to-string item-set
+  append entry state-collection/set-id
+  append state-collection/item-set-ids entry
 
-  entryIdToItemSet: make block![]
-  append entryIdToItemSet stateCollection/setId
-  append/only entryIdToItemSet itemSet
-  append stateCollection/idToItemSets entryIdToItemSet 
+  entry-id-to-item-set: make block![]
+  append entry-id-to-item-set state-collection/set-id
+  append/only entry-id-to-item-set item-set
+  append state-collection/id-to-item-sets entry-id-to-item-set
 
-  stateCollection/setId: stateCollection/setId + 1
+  state-collection/set-id: state-collection/set-id + 1
 ]
 
 ; selects specific grammar rule identified by name from grammar
-selectRule: function[grammar name] [
+select-rule: function[grammar name] [
   rule: select grammar name
   return rule 
 ]
 
 ; dumps grammar
-printGrammar: function [grammar] [
+print-grammar: function [grammar] [
   foreach [lhs rhs] grammar [
     prin [lhs]
     prin " -> "
@@ -72,8 +72,8 @@ printGrammar: function [grammar] [
 
     foreach variable rhs [
       if index > 0 [ prin " | " ]
-      foreach varElem variable [
-        either empty? varElem [prin "epsilon"] [prin " " prin varElem prin " "]
+      foreach var-elem variable [
+        either empty? var-elem [prin "epsilon"] [prin " " prin var-elem prin " "]
       ]
       index: index + 1
     ]
@@ -82,55 +82,55 @@ printGrammar: function [grammar] [
 ]
 
 ; adds new rule to grammar
-addRule: function[grammar name rhs][    
-  presentRule: selectRule grammar name
-  either not empty? presentRule [
-    append/only presentRule rhs
+add-rule: function[grammar name rhs][    
+  present-rule: select-rule grammar name
+  either not empty? present-rule [
+    append/only present-rule rhs
   ] [
     rule: []
-    rhsBlock: []
-    append/only rhsBlock rhs
+    rhs-block: []
+    append/only rhs-block rhs
     append rule name
-    append/only rule rhsBlock
+    append/only rule rhs-block
     append grammar rule
   ]
 ]
 
 
-; generate all LR0Items from given grammar
-generateLR0Items: function[grammar] [
-  LR0Items: []
+; generate all lr0-items from given grammar
+generate-lr0-items: function[grammar] [
+  lr0-items: []
 
   foreach [lhs rhs] grammar [
     lhs: lhs
     rhs: rhs
-    ruleIndex: make integer! 1
-    foreach rhsBlock rhs [
-      dotPos: make Integer! 1
-      foreach rhsElem rhsBlock [
+    rule-index: make integer! 1
+    foreach rhs-block rhs [
+      dot-pos: make Integer! 1
+      foreach rhsElem rhs-block [
         ; add item except final one
-        append LR0Items make item [ ruleLHS: lhs ruleRHSIndex: ruleIndex dotPosition: dotPos ]
-        dotPos: dotPos + 1
+        append lr0-items make item [ rule-lhs: lhs rule-rhs-index: rule-index dot-position: dot-pos ]
+        dot-pos: dot-pos + 1
       ]
       ; add final item
-      append LR0Items make item [ ruleLHS: lhs ruleRHSIndex: ruleIndex dotPosition: dotPos ]
-      ruleIndex: ruleIndex + 1
+      append lr0-items make item [ rule-lhs: lhs rule-rhs-index: rule-index dot-position: dot-pos ]
+      rule-index: rule-index + 1
     ]
     
   ]
-  return LR0Items
+  return lr0-items
 ]
 
-; print all items exist in LR0Items
-printLR0Items: function [LR0Items grammar] [
-  foreach item LR0Items [
-    prin item/ruleLHS
+; print all items exist in lr0-items
+print-lr0-items: function [lr0-items grammar] [
+  foreach item lr0-items [
+    prin item/rule-lhs
     prin " -> "
-    rule: select grammar item/ruleLHS
-    rhs: pick rule item/ruleRHSIndex
-    dotPos: make integer! 1
+    rule: select grammar item/rule-lhs
+    rhs: pick rule item/rule-rhs-index
+    dot-pos: make integer! 1
     foreach variable rhs [
-      if dotPos == item/dotPosition [
+      if dot-pos == item/dot-position [
         prin "."
       ]
       either empty? variable [prin " epsilon "] 
@@ -139,93 +139,93 @@ printLR0Items: function [LR0Items grammar] [
         prin variable
         prin " "
       ]
-      dotPos: dotPos + 1
+      dot-pos: dot-pos + 1
     ]
 
     ; condition for final item
-    if dotPos == item/dotPosition [ prin "." ]
+    if dot-pos == item/dot-position [ prin "." ]
 
-    dotPos: 1
+    dot-pos: 1
     print ""
   ]
 ]
 
 ; closure of LR0 items 
-LR0Closure: function [LR0Items grammar] [
+lr0-closure: function [lr0-items grammar] [
   
-  openSet: make block![]
-  resultSet: make block![]
+  open-set: make block![]
+  result-set: make block![]
 
-  append openSet LR0Items
+  append open-set lr0-items
   
-  while [not tail? openSet] [        
+  while [not tail? open-set] [        
   
-    item: first openSet    
-    append resultSet item
-    remove openSet
+    item: first open-set    
+    append result-set item
+    remove open-set
         
-    rhs: select grammar item/ruleLHS 
+    rhs: select grammar item/rule-lhs
     if empty? rhs [continue]
         
-    rhsRule: pick rhs item/ruleRHSIndex
-    if empty? rhsRule [ continue ]
+    rhs-rule: pick rhs item/rule-rhs-index
+    if empty? rhs-rule [ continue ]
 
-    variable: pick rhsRule item/dotPosition
+    variable: pick rhs-rule item/dot-position
 
     if empty? variable [ continue ]
 
-    nextProduction: select grammar variable
+    next-production: select grammar variable
   
-    if empty? nextProduction [continue]
+    if empty? next-production [continue]
 
-    repeat index length? nextProduction [
-      newItem: make item [ruleLHS: variable ruleRHSIndex: index dotPosition: 1]
-      if not empty? find head openSet newItem [ continue ]
+    repeat index length? next-production [
+      new-item: make item [rule-lhs: variable rule-rhs-index: index dot-position: 1]
+      if not empty? find head open-set new-item [ continue ]
       
-      if not empty? find head resultSet newItem [ continue ]
+      if not empty? find head result-set new-item [ continue ]
    
-      append openSet newItem
+      append open-set new-item
     ]
   ]
 
-  return resultSet
+  return result-set
 ]
 
 ; LR0 goto function takes LR0 item set token and grammar
 ; and return another item set 
-LR0Goto: function[LR0Items token grammar] [
-  gotoSet: make block![]
-  foreach item LR0Items [
-    rhs: select grammar item/ruleLHS
-    rule: pick rhs item/ruleRHSIndex
+lr0-goto: function[lr0-items token grammar] [
+  goto-set: make block![]
+  foreach item lr0-items [
+    rhs: select grammar item/rule-lhs
+    rule: pick rhs item/rule-rhs-index
     ruleLen: length? rule
-    if ruleLen < item/dotPosition [continue]
-    nextToken: pick rule item/dotPosition
-    if equal? nextToken token [
-       newItem: make item [ruleLHS: item/ruleLHS ruleRHSIndex: item/ruleRHSIndex dotPosition: item/dotPosition + 1]
-       append gotoSet newItem
+    if ruleLen < item/dot-position [continue]
+    next-token: pick rule item/dot-position
+    if equal? next-token token [
+       new-item: make item [rule-lhs: item/rule-lhs rule-rhs-index: item/rule-rhs-index dot-position: item/dot-position + 1]
+       append goto-set new-item
     ]
   ]
-  return LR0Closure gotoSet grammar
+  return lr0-closure goto-set grammar
 ]
 
 ; get grammar and return all tokens
 tokens: function[grammar] [  
-  tokenSet: make block![]
+  token-set: make block![]
   foreach [lhs rhs] grammar [
-    append tokenSet lhs
+    append token-set lhs
     foreach rule rhs [
       foreach var rule [
-        append tokenSet var
+        append token-set var
       ]
     ]
   ]
-  return unique tokenSet
+  return unique token-set
 ]
 
 ; helper function used to build an edge 
 ; from item set to item set via token
-makeEdge: function [from to token] [
+make-edge: function [from to token] [
   edge: make block![]
   append edge from
   append edge to
@@ -235,66 +235,67 @@ makeEdge: function [from to token] [
 
 
 ; generate LR canonical collection items
-generateLR0ItemsSet: function[mainRule grammar stateCollection] [
+generate-lr0-items-set: function[main-rule grammar state-collection] [
   
-  edgeSet: make block![]
+  edge-set: make block![]
 
-  mainRuleLhs: first mainRule
-  mainRuleRhs: second mainRule
-  rhs: select grammar mainRuleLhs
+  main-rule-lhs: first main-rule
+  main-rule-rhs: second main-rule
+  rhs: select grammar main-rule-lhs
   index: make integer! 1
   
   foreach e rhs [
-    if equal? e mainRuleRhs [ break ]
+    if equal? e main-rule-rhs [ break ]
     index: index + 1
   ]  
   
-  initialItem: make item [ruleLHS: mainRuleLhs ruleRHSIndex: index dotPosition: 1]
+  initial-item: make item [rule-lhs: main-rule-lhs rule-rhs-index: index dot-position: 1]
   
-  initialSet: make block![]
-  append initialSet initialItem
-  startItemSet: LR0Closure initialSet grammar
+  initial-set: make block![]
+  append initial-set initial-item
+  start-item-set: lr0-closure initial-set grammar
  
-  addItemSet startItemSet stateCollection
+  add-item-set start-item-set state-collection
  
-  openItems: make block![]
+  open-items: make block![]
 
-  append/only openItems startItemSet
+  append/only open-items start-item-set
   
-  while [not tail? openItems] [
-    itemSet: first openItems
-    remove openItems    
+  while [not tail? open-items] [
+    item-set: first open-items
+    remove open-items    
     foreach token tokens grammar [
-      gotoSet: make block! []
-      gotoSet: LR0Goto itemSet token grammar
+      goto-set: make block! []
+      goto-set: lr0-goto item-set token grammar
     
-      if empty? gotoSet [continue]
+      if empty? goto-set [continue]
 
-      if none? checkItemSetExists gotoSet stateCollection [
-        addItemSet gotoSet stateCollection        
-        append/only openItems gotoSet
+      if none? check-item-set-exists goto-set state-collection [
+        add-item-set goto-set state-collection        
+        append/only open-items goto-set
       ]
       
-      from: checkItemSetExists itemSet stateCollection
-      to: checkItemSetExists gotoSet stateCollection
+      from: check-item-set-exists item-set state-collection
+      to: check-item-set-exists goto-set state-collection
 
-      append/only edgeSet makeEdge from to token
+      append/only edge-set make-edge from to token
     ]    
   ]
-  return edgeSet
+  return edge-set
 ]
 
-; print all items exist in LR0Items
-serializeLR0Items: function [LR0Items grammar] [
+; print all items exist in lr0 items
+serialize-lr0-items: function [lr0-items grammar] [
   output: make string! ""
-  foreach item LR0Items [
-    append output item/ruleLHS
+  if none? lr0-items [ return output ]
+  foreach item lr0-items [
+    append output item/rule-lhs
     append output " -> "
-    rule: select grammar item/ruleLHS
-    rhs: pick rule item/ruleRHSIndex
-    dotPos: make integer! 1
+    rule: select grammar item/rule-lhs
+    rhs: pick rule item/rule-rhs-index
+    dot-pos: make integer! 1
     foreach variable rhs [
-      if dotPos == item/dotPosition [
+      if dot-pos == item/dot-position [
         append output "."
       ]
       either empty? variable [append output " epsilon "] 
@@ -303,30 +304,30 @@ serializeLR0Items: function [LR0Items grammar] [
         append output variable
         append output " "
       ]
-      dotPos: dotPos + 1
+      dot-pos: dot-pos + 1
     ]
 
     ; condition for final item
-    if dotPos == item/dotPosition [ append output "." ]
+    if dot-pos == item/dot-position [ append output "." ]
 
-    dotPos: 1
+    dot-pos: 1
     append output "^/"
   ]
   return output
 ]
 
 ; generate graphviz dot graph representation
-; by taking grammar stateCollection and edgeSet
-generateDot: function [grammar stateCollection edgeSet] [
+; by taking grammar state-collection and edge-set
+generate-dot: function [grammar state-collection edge-set] [
   output: make string! ""
   append output "digraph grammar {^/"
   append output "bgcolor=transparent; ^/"
   append output "node [color=lightblue,style=filled fontname = ^"font-fixed^" fontsize=11]; ^/"
-  foreach edge edgeSet [
-    from: first edge stateCollection
-    to: second edge stateCollection
-    fromItemSet: checkItemSetExistsById first edge stateCollection
-    toItemSet: checkItemSetExistsById second edge stateCollection
+  foreach edge edge-set [
+    from: first edge state-collection
+    to: second edge state-collection
+    from-item-set: check-item-set-exists-by-id first edge state-collection
+    to-item-set: check-item-set-exists-by-id second edge state-collection
     token: ""
     append output from grammar 
     append output "->"
@@ -340,13 +341,13 @@ generateDot: function [grammar stateCollection edgeSet] [
     append output "^/"
     append output from
     append output " [label=^""
-    append output serializeLR0Items fromItemSet grammar
+    append output serialize-lr0-items from-item-set grammar
     append output "^" "
     append output "color=lightblue ]"
     append output "^/"
     append output to
     append output " [label=^""
-    append output serializeLR0Items toItemSet grammar
+    append output serialize-lr0-items to-item-set grammar
     append output "^" "
     append output "color=lightblue ]"
     append output "^/"
@@ -361,13 +362,13 @@ test1: function[] [
     "E" [["E" "+" "E"]["1"]]
   ]
 
-  addRule testGrammar "A" ["0"]
-  addRule testGrammar "A" ["1"]
-  addRule testGrammar "A" [""]
-  addRule testGrammar "E" ["E" "*" "E"]
-  addRule testGrammar "E" ["E" "/" "E"]
+  add-rule testGrammar "A" ["0"]
+  add-rule testGrammar "A" ["1"]
+  add-rule testGrammar "A" [""]
+  add-rule testGrammar "E" ["E" "*" "E"]
+  add-rule testGrammar "E" ["E" "/" "E"]
 
-  printGrammar testGrammar
+  print-grammar testGrammar
 
 ]
 
@@ -376,24 +377,27 @@ test2: function[] [
     "S" [["E"]] 
     "E" [["E" "+" "E"]["1"]]
   ]
-  LR0Items: generateLR0Items grammar
-  ;printLR0Items LR0Items grammar
-  ;print mold LR0Items
-  LR0Items1: []
-  append LR0Items1 make item [ ruleLHS: "E" ruleRHSIndex: 2 dotPosition: 1 ]
-  LR0Result: LR0Closure LR0Items1 grammar
+  
+  lr0-items: generate-lr0-items grammar
+  ;print-lr0-items lr0-items grammar
+  ;print mold lr0-items
+  lr0-items1: []
+  
+  append lr0-items1 make item [ rule-lhs: "E" rule-rhs-index: 2 dot-position: 1 ]
+
+  lr0-result: lr0-closure lr0-items1 grammar
   print "LR0closure:"
-  printLR0Items LR0Result grammar
+  print-lr0-items lr0-result grammar
   print "LR0goto:"
-  ;print mold LR0Items1
-  gotoResult: LR0Goto LR0Items1 "0" grammar 
-  printLR0Items gotoResult grammar
-  ;print mold stateCollection
-  ;addItemSet LR0Result stateCollection
-  ;addItemSet LR0Result stateCollection
-  ;print mold stateCollection
-  ;print checkItemSetExists LR0Result stateCollection
-  ;print mold checkItemSetExistsById 1 stateCollection  
+  ;print mold lr0-items1
+  goto-result: lr0-goto lr0-items1 "0" grammar 
+  print-lr0-items goto-result grammar
+  ;print mold state-collection
+  ;add-item-set LR0Result state-collection
+  ;add-item-set LR0Result state-collection
+  ;print mold state-collection
+  ;print check-item-set-exists lr0-result state-collection
+  ;print mold check-item-set-exists-by-id 1 state-collection  
 ]
 
 test1

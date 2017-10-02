@@ -13,8 +13,8 @@ grammar-txt: {}
 previous-grammar: load grammar-txt
 
 generate-graph: function [grammar] [
-	state-collection: make StateCollection [ 
-		itemSetIds: make hash![] idToItemSets: make hash![] setId: make integer! 1 
+	s-collection: make state-collection [ 
+		item-set-ids: make hash![] id-to-item-sets: make hash![] set-id: make integer! 1 
 	]
 
 	main-rule: make block![]
@@ -31,10 +31,10 @@ generate-graph: function [grammar] [
 	edge-set: make block![]
 
 	if (not none? main-rule-lhs) and (not none? main-rule-rhs) [
-		append edge-set generateLR0ItemsSet main-rule grammar state-collection
+		append edge-set generate-lr0-items-set main-rule grammar s-collection
 	]
 
-	write %grammar.dot generateDot grammar state-collection edge-set
+	write %grammar.dot generate-dot grammar s-collection edge-set
 	call-command: "dot grammar.dot -Tpng -o grammar.png"
 	call/wait call-command
 	graph: load %grammar.png					
