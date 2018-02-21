@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <vector>
 #include <set>
@@ -8,6 +9,9 @@
 #include <fstream>
 
 typedef std::multimap<char, std::vector<char>> Grammar;
+typedef std::map<std::pair<size_t, char>, std::pair<char, size_t>> ActionTable;
+typedef std::map<std::pair<int, char>, int> GotoTable;
+
 
 struct grammar_rule
 {
@@ -29,6 +33,16 @@ struct grammar_rule
     bool operator==(const grammar_rule& r) const { return lhs == r.lhs && rhs == r.rhs; }
     std::vector<char> rhs;
 };
+
+size_t getGrammarRuleIndex(const Grammar& grammar, const grammar_rule& rule)
+{    
+    auto range = grammar.equal_range(rule.lhs);
+    auto begin = range.first;
+    for (; begin != range.second; ++begin) {
+        if ((*begin).second == rule.rhs) break;
+    }
+    return std::distance(grammar.begin(), begin);
+}
 
 struct item
 {
@@ -87,10 +101,16 @@ std::set<item> lr0goto(const std::set<item>& is, char token, const Grammar& gram
     return lr0closure(gotoSet, grammar);
 }
 
-std::string serializeItemSet(const Grammar& grammar, const std::set<item>& closedSet)
+std::string serializeItemSet(const Grammar& grammar, const std::set<item>& closedSet, int id)
 {
     std::string output;
     int index = 0;
+    std::stringstream ss;
+    ss << id;
+    output += "State ";
+    output += ss.str();
+    output += '\n';
+
     for (auto e : closedSet) {
         output += (e.rule.lhs); 
         output += " -> ";
@@ -111,7 +131,7 @@ std::string serializeItemSet(const Grammar& grammar, const std::set<item>& close
 
 void showItemSet(const Grammar& grammar, const std::set<item>& closedSet)
 {
-    std::cout << serializeItemSet(grammar, closedSet).c_str();
+    std::cout << serializeItemSet(grammar, closedSet, 0).c_str();
 }
 
 std::set<char> tokens(const Grammar& grammar)
@@ -224,6 +244,72 @@ std::set<Edge> generateLR0Items(const Grammar& grammar, const grammar_rule& main
     return gotoEdges;
 }
 
+std::set<char> terminals(const Grammar& grammar)
+{
+    std::set<char> terminalsSet;
+    auto allTokens = tokens(grammar);
+    std::set<char> nonTerminals;
+    for (auto rule : grammar) {
+        nonTerminals.insert(rule.first);
+    }
+    for (auto token : allTokens) {
+        if (nonTerminals.find(token) == nonTerminals.end()) {
+            terminalsSet.insert(token);
+        }
+    }
+    return terminalsSet;
+}
+
+std::set<char> nonTerminals(const Grammar& grammar)
+{
+    std::set<char> nonTerminalsSet;
+    for (auto rule : grammar) {
+        nonTerminalsSet.insert(rule.first);
+    }
+    return nonTerminalsSet;
+}
+
+ActionTable generateActionTable(const StateCollection& stateCollection, const std::set<Edge>& lr0CanonicalCollection, const Grammar& grammar)
+{
+    
+    ActionTable actionTable;
+    auto terms = terminals(grammar);
+    // fill shifts
+    for (auto edge : lr0CanonicalCollection) {
+        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
+        
+        char action = ' ';
+        if (terms.find(edge.token) != terms.end()) {
+            action = 's';
+        }
+        actionTable[std::make_pair(edge.from, edge.token)] = std::make_pair(action, edge.to);
+    }
+    // fill reductions for final states
+
+    auto stateNum = stateCollection.getNumberOfStates();
+    for (size_t i = 0; i < stateNum; ++i) {
+        auto itemSet = stateCollection.getItemSetById(i);
+        if (itemSet.size() != 1) continue;
+        auto item = *itemSet.begin();
+        if (item.dotPosition == item.rule.rhs.size()) {
+            size_t ruleNumber = getGrammarRuleIndex(grammar, item.rule);            
+            char action = 'r';
+            for (const auto token : terms) {
+                actionTable[std::make_pair(i, token)] = std::make_pair(action, ruleNumber);
+            }
+        }
+    }
+
+    return actionTable;
+}
+
+void dumpActionTable(const ActionTable& actionTable)
+{
+    for (const auto & key : actionTable) {
+        std::cout << "(" << key.first.first << "," << key.first.second << ")" << " = " << key.second.first << key.second.second << std::endl;
+    }
+}
+
 std::string generateDot(const Grammar& grammar, const StateCollection& stateCollection, const std::set<Edge>& CC)
 {
     std::string output;
@@ -235,11 +321,11 @@ std::string generateDot(const Grammar& grammar, const StateCollection& stateColl
         auto token = edge.token;
 
         output += "\"";
-        output += serializeItemSet(grammar, fromItemSet);
+        output += serializeItemSet(grammar, fromItemSet, edge.from);
         output += "\"\n";
         output += "->\n";
         output += "\"";        
-        output += serializeItemSet(grammar, toItemSet);
+        output += serializeItemSet(grammar, toItemSet, edge.to);
         output += "\"\n";
         output += "[label=";
         output += "\"";
@@ -329,9 +415,152 @@ void testLR0closure3()
     out << generateDot(grammar, stateCollection, CC).c_str();
 }
 
+void testLR0closure4()
+{
+    /*
+    (0) S -> E eof
+    (1) E -> E * B
+    (2) E -> E + B
+    (3) E -> B
+    (4) B -> 0
+    (5) B -> 1
+    */
+
+    Grammar grammar = {
+        { 'S',{ 'E' } },
+        { 'E',{ 'E', '+', 'E' } },
+        { 'E',{ '1' } },
+    };
+    std::set<item> initial_set;
+    grammar_rule mainRule('S', { 'E' });
+    item initial_item(mainRule, 0);
+    initial_set.insert(initial_item);
+    auto closedSet = lr0closure(initial_set, grammar);
+    std::cout << "closedSet" << std::endl;
+    showItemSet(grammar, closedSet);
+    auto gotoSet = lr0goto(closedSet, 'E', grammar);
+    std::cout << "gotoSet" << std::endl;
+    showItemSet(grammar, gotoSet);
+
+    StateCollection stateCollection;
+
+    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
+    for (auto edge : CC) {
+        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
+    }
+
+    std::ofstream out("graph.dot");
+    out << generateDot(grammar, stateCollection, CC).c_str();
+}
+
+
+/*
+Z -> E$ E -> T | E ’ + ’ T
+T -> i
+*/
+
+
+void testExprGrammar()
+{
+    Grammar grammar = {
+        { 'Z',{ 'E', '$'} },
+        { 'E',{ 'T'} },
+        { 'E',{ 'E', '+', 'T' } },
+        { 'T',{ '1' } },
+        { 'T',{ '(', 'E', ')'} } 
+    };
+    
+    std::set<item> initial_set;
+    grammar_rule mainRule('Z', { 'E', '$' });
+    item initial_item(mainRule, 0);
+    initial_set.insert(initial_item);
+    auto closedSet = lr0closure(initial_set, grammar);
+    std::cout << "closedSet" << std::endl;
+    showItemSet(grammar, closedSet);
+    auto gotoSet = lr0goto(closedSet, 'E', grammar);
+    std::cout << "gotoSet" << std::endl;
+    showItemSet(grammar, gotoSet);
+
+    StateCollection stateCollection;
+
+    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
+    for (auto edge : CC) {
+        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
+    }
+
+    std::ofstream out("graph.dot");
+    out << generateDot(grammar, stateCollection, CC).c_str();
+}
+
+void testExprGrammar2()
+{
+    Grammar grammar = {
+        { 'Z',{ 'E', '$' } },
+        { 'E',{ '{', 'T' , '}' } },
+        { 'T',{ '1' } }
+    };
+
+    std::set<item> initial_set;
+    grammar_rule mainRule('Z', { 'E', '$' });
+    item initial_item(mainRule, 0);
+    initial_set.insert(initial_item);
+    auto closedSet = lr0closure(initial_set, grammar);
+    std::cout << "closedSet" << std::endl;
+    showItemSet(grammar, closedSet);
+    auto gotoSet = lr0goto(closedSet, 'E', grammar);
+    std::cout << "gotoSet" << std::endl;
+    showItemSet(grammar, gotoSet);
+
+    StateCollection stateCollection;
+
+    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
+    for (auto edge : CC) {
+        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
+    }
+
+    std::ofstream out("graph.dot");
+    out << generateDot(grammar, stateCollection, CC).c_str();
+}
+
+void testExprGrammar3()
+{
+    /*
+    Grammar grammar = {
+        { 'Z',{ 'E', '$' } },
+        { 'E',{ '{', 'T' , '}' } },
+        { 'T',{ '1' } }
+    };
+    */
+    Grammar grammar = {
+        { 'Z',{ 'E', '$' } },
+        { 'E',{ 'T' } },
+        { 'E',{ 'E', '+', 'T' } },
+        { 'T',{ '1' } },
+        { 'T',{ '(', 'E', ')' } }
+    };
+    auto term = terminals(grammar);
+    std::cout << "terminals" << std::endl;
+    for (const auto& t : term) {
+        std::cout << t << std::endl;
+    }
+    std::cout << "non-terminals" << std::endl;
+    for (const auto& t : nonTerminals(grammar)) {
+        std::cout << t << std::endl;
+    }
+
+    StateCollection stateCollection;
+    grammar_rule mainRule('Z', { 'E', '$' });
+    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
+    auto actionTable = generateActionTable(stateCollection, CC, grammar);
+    dumpActionTable(actionTable);
+
+}
 
 int main()
 {
+    testExprGrammar();
+    testExprGrammar3();
+    /*
     Grammar grammar = {
         {'M',{'S', 'E'}},
         {'S',{'E'}},
@@ -342,7 +571,7 @@ int main()
     testLR0closure1(grammar);
     testLR0closure2(grammar);
     
-    testLR0closure3();
-    
+    testLR0closure4();
+    */
     return 0;
 }
