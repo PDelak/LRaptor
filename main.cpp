@@ -29,7 +29,10 @@ struct parse_node
 void visit(std::string& prefix, const parse_node_ptr& node)
 {
 	if (!node) return;
-	prefix = prefix + " ";
+	for (auto& e : prefix) {
+		e = ' ';
+	}
+	prefix = prefix + "|-";
 	std::cout << "\n" + prefix + node->token;
 
 	for (const auto& child : node->children) {
@@ -37,12 +40,14 @@ void visit(std::string& prefix, const parse_node_ptr& node)
 		
 	}
 	prefix.pop_back();
+	prefix.pop_back();
 }
 
 void visit(const parse_node_ptr& node)
 {
 	std::string prefix = "";
 	visit(prefix, node);
+	std::cout << std::endl;
 }
 
 
