@@ -7,10 +7,43 @@
 #include <list>
 #include <cassert>
 #include <fstream>
+#include <any>
+#include <stack>
+#include <memory>
 
 typedef std::multimap<char, std::vector<char>> Grammar;
-typedef std::map<std::pair<size_t, char>, std::pair<char, size_t>> ActionTable;
-typedef std::map<std::pair<int, char>, int> GotoTable;
+typedef std::map<std::pair<size_t, char>, std::pair<char, size_t>> ParseTable;
+
+struct parse_node;
+typedef std::shared_ptr<parse_node> parse_node_ptr;
+
+struct parse_node
+{
+	parse_node() :token(0) {}
+	parse_node(char t) :token(t) {}
+	char token;
+	std::vector<parse_node_ptr> children;
+};
+
+
+void visit(std::string& prefix, const parse_node_ptr& node)
+{
+	if (!node) return;
+	prefix = prefix + " ";
+	std::cout << "\n" + prefix + node->token;
+
+	for (const auto& child : node->children) {
+		visit(prefix, child);
+		
+	}
+	prefix.pop_back();
+}
+
+void visit(const parse_node_ptr& node)
+{
+	std::string prefix = "";
+	visit(prefix, node);
+}
 
 
 struct grammar_rule
@@ -19,8 +52,8 @@ struct grammar_rule
         :lhs(l), rhs(r)
     {}
 
-    grammar_rule(char l, const std::initializer_list<char>& r)
-        :lhs(l)
+	grammar_rule(char l, const std::initializer_list<char>& r)
+		:lhs(l)
     {
         auto b = r.begin();
         auto e = r.end();
@@ -269,16 +302,15 @@ std::set<char> nonTerminals(const Grammar& grammar)
     return nonTerminalsSet;
 }
 
-ActionTable generateActionTable(const StateCollection& stateCollection, const std::set<Edge>& lr0CanonicalCollection, const Grammar& grammar)
-{
-    
-    ActionTable actionTable;
+ParseTable generateActionTable(const StateCollection& stateCollection, const std::set<Edge>& lr0CanonicalCollection, const Grammar& grammar)
+{    
+    ParseTable actionTable;
     auto terms = terminals(grammar);
     // fill shifts
     for (auto edge : lr0CanonicalCollection) {
         std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
         
-        char action = ' ';
+        char action = 'g';
         if (terms.find(edge.token) != terms.end()) {
             action = 's';
         }
@@ -294,6 +326,7 @@ ActionTable generateActionTable(const StateCollection& stateCollection, const st
         if (item.dotPosition == item.rule.rhs.size()) {
             size_t ruleNumber = getGrammarRuleIndex(grammar, item.rule);            
             char action = 'r';
+            if (item.rule.rhs[item.dotPosition-1] == '$') action = 'a';			
             for (const auto token : terms) {
                 actionTable[std::make_pair(i, token)] = std::make_pair(action, ruleNumber);
             }
@@ -303,11 +336,164 @@ ActionTable generateActionTable(const StateCollection& stateCollection, const st
     return actionTable;
 }
 
-void dumpActionTable(const ActionTable& actionTable)
+bool parse(const std::string& input, const ParseTable& parseTable, const Grammar& grammar, std::string& output)
+{
+	std::vector<std::any> parseStack;
+	parseStack.push_back(std::make_any<size_t>(0));
+	auto tokenPtr = input.begin();
+	char token;
+	bool error = false;
+	if (tokenPtr == input.end()) return error;
+	
+	for (;;) {
+		auto state = std::any_cast<size_t>(*parseStack.rbegin());
+		
+		if (tokenPtr != input.end()) token = *tokenPtr;
+		auto actionIterator = parseTable.find(std::make_pair(state, token));
+		if (actionIterator == parseTable.end()) { error = true; break; }
+
+		auto action = actionIterator->second.first;	
+		if (action == 's') {
+			parseStack.push_back(std::make_any<char>(token));
+			auto newState = actionIterator->second.second;
+			parseStack.push_back(std::make_any<size_t>(newState));
+			++tokenPtr;
+		}
+		else if (action == 'r') {
+			size_t ruleIndex = actionIterator->second.second;
+			auto ruleIterator = grammar.begin();
+			std::advance(ruleIterator , ruleIndex);
+			auto rhsSize = ruleIterator->second.size();
+			for(size_t i = 0; i < rhsSize * 2; ++i) parseStack.pop_back();
+			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
+			output.push_back(ruleIterator->first);
+			parseStack.push_back(std::make_any<char>(ruleIterator->first));
+			actionIterator = parseTable.find(std::make_pair(newState, ruleIterator->first));
+			auto state = actionIterator->second.second;
+			parseStack.push_back(std::make_any<size_t>(state));
+		}
+		else if (action == 'a') {
+			size_t ruleIndex = actionIterator->second.second;
+			auto ruleIterator = grammar.begin();
+			std::advance(ruleIterator, ruleIndex);
+			auto rhsSize = ruleIterator->second.size();
+			for (size_t i = 0; i < rhsSize * 2; ++i) parseStack.pop_back();
+			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
+			output.push_back(ruleIterator->first);
+			parseStack.push_back(std::make_any<char>(ruleIterator->first));		
+			break;
+		}
+		else {
+			error = true;
+			break;
+		}
+
+	}
+	return error;
+}
+
+bool parseTree(const std::string& input, const ParseTable& parseTable, const Grammar& grammar, parse_node_ptr& tree)
+{
+	std::vector<std::any> parseStack;
+	parseStack.push_back(std::make_any<size_t>(0));
+	auto tokenPtr = input.begin();
+	char token;
+	bool error = false;
+	if (tokenPtr == input.end()) return error;
+
+	for (;;) {
+		auto state = std::any_cast<size_t>(*parseStack.rbegin());
+
+		if (tokenPtr != input.end()) token = *tokenPtr;
+		auto actionIterator = parseTable.find(std::make_pair(state, token));
+		if (actionIterator == parseTable.end()) { error = true; break; }
+
+		auto action = actionIterator->second.first;
+		if (action == 's') {
+			auto node = parse_node_ptr(new parse_node(token));
+			parseStack.push_back(std::make_any<parse_node_ptr>(node));
+			auto newState = actionIterator->second.second;
+			parseStack.push_back(std::make_any<size_t>(newState));
+			++tokenPtr;
+		}
+		else if (action == 'r') {
+			size_t ruleIndex = actionIterator->second.second;
+			auto ruleIterator = grammar.begin();
+			std::advance(ruleIterator, ruleIndex);
+			
+			auto rhsSize = ruleIterator->second.size();
+			auto parent = parse_node_ptr(new parse_node(ruleIterator->first));
+			for (size_t i = 0; i < rhsSize * 2; ++i) {
+				if (i % 2 != 0) {
+					auto node = std::any_cast<parse_node_ptr>(*parseStack.rbegin());
+					parent->children.push_back(node);
+
+				}
+				parseStack.pop_back();
+			}
+			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
+			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
+			actionIterator = parseTable.find(std::make_pair(newState, ruleIterator->first));
+			auto state = actionIterator->second.second;
+			parseStack.push_back(std::make_any<size_t>(state));
+		}
+		else if (action == 'a') {
+			size_t ruleIndex = actionIterator->second.second;
+			auto ruleIterator = grammar.begin();
+			std::advance(ruleIterator, ruleIndex);
+			auto rhsSize = ruleIterator->second.size();
+			auto parent = parse_node_ptr(new parse_node(ruleIterator->first));
+			for (size_t i = 0; i < rhsSize * 2; ++i) {
+				if (i % 2 != 0) {
+					auto node = std::any_cast<parse_node_ptr>(*parseStack.rbegin());
+					parent->children.push_back(node);
+
+				}
+				parseStack.pop_back();
+			}
+			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
+			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
+			break;
+		}
+		else {
+			error = true;
+			break;
+		}
+	}
+	if (!error) {
+		tree = std::any_cast<parse_node_ptr>(*parseStack.rbegin());		
+	}
+	return error;
+}
+
+
+void dumpActionTable(const ParseTable& actionTable)
 {
     for (const auto & key : actionTable) {
         std::cout << "(" << key.first.first << "," << key.first.second << ")" << " = " << key.second.first << key.second.second << std::endl;
     }
+}
+
+void dumpGrammar(const Grammar& grammar)
+{
+    std::string out = "";
+    size_t index = 0;
+    
+    for (const auto& rule : grammar) {
+        std::stringstream indexstream;
+        indexstream << index;
+        indexstream << " : ";        
+        out += indexstream.str();
+        out += rule.first;
+        out += " -> ";
+        for (const auto& symbol : rule.second) {
+            out += symbol;
+            out += " ";
+        }
+        out += ";\n";
+        ++index;
+    }
+    std::cout << out.c_str() << std::endl;
 }
 
 std::string generateDot(const Grammar& grammar, const StateCollection& stateCollection, const std::set<Edge>& CC)
@@ -532,10 +718,11 @@ void testExprGrammar3()
     };
     */
     Grammar grammar = {
-        { 'Z',{ 'E', '$' } },
+        { 'Z',{ 'E', '$'} },
         { 'E',{ 'T' } },
         { 'E',{ 'E', '+', 'T' } },
         { 'T',{ '1' } },
+		{ 'T',{ '0' } },
         { 'T',{ '(', 'E', ')' } }
     };
     auto term = terminals(grammar);
@@ -551,14 +738,27 @@ void testExprGrammar3()
     StateCollection stateCollection;
     grammar_rule mainRule('Z', { 'E', '$' });
     auto CC = generateLR0Items(grammar, mainRule, stateCollection);
-    auto actionTable = generateActionTable(stateCollection, CC, grammar);
-    dumpActionTable(actionTable);
+	std::ofstream out("graph.dot");
+	out << generateDot(grammar, stateCollection, CC).c_str();
+    auto parseTable = generateActionTable(stateCollection, CC, grammar);
+    dumpActionTable(parseTable);
+    dumpGrammar(grammar);
+	std::string output;
+	parse("1+0$", parseTable, grammar, output);
+	for (const auto& token : output) {
+		std::cout << token << ",";
+	}
+	std::cout << std::endl;
+	parse_node_ptr tree;
+	parseTree("1+0$", parseTable, grammar, tree);
+	size_t indent = 0;
+	visit(tree);
 
 }
 
 int main()
 {
-    testExprGrammar();
+    //testExprGrammar();
     testExprGrammar3();
     /*
     Grammar grammar = {
