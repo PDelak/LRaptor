@@ -14,6 +14,40 @@
 typedef std::multimap<char, std::vector<char>> Grammar;
 typedef std::map<std::pair<size_t, char>, std::pair<char, size_t>> ParseTable;
 
+namespace {
+	Grammar grammar1 = {
+		{ 'S',{ 'E', '$' } },
+		{ 'E',{ 'E', '*', 'B' } },
+		{ 'E',{ 'E', '+', 'B' } },
+		{ 'E',{ 'B' } },
+		{ 'B',{ '0' } },
+		{ 'B',{ '1' } }
+	};
+
+	Grammar grammar2 = {
+		{ 'S',{ 'P', '$' } },
+		{ 'P',{ '(', 'E', ')' } },
+		{ 'E',{ '1' } },
+	};
+
+	Grammar grammar3 = {
+		{ 'S',{ 'E', '$' } },
+		{ 'E',{ 'T' } },
+		{ 'E',{ 'E', '+', 'T' } },
+		{ 'T',{ 'F' } },
+		{ 'F',{ '1' } },
+		{ 'F',{ '(', 'E', ')' } }
+	};
+
+	Grammar grammar4 = {
+		{ 'Z',{ 'E', '$' } },
+		{ 'E',{ '{', 'T' , '}' } },
+		{ 'T',{ '1' } }
+	};
+
+}
+
+
 struct parse_node;
 typedef std::shared_ptr<parse_node> parse_node_ptr;
 
@@ -436,11 +470,12 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 				}
 				parseStack.pop_back();
 			}
-			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
+			auto currentState = std::any_cast<size_t>(*parseStack.rbegin());
 			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
-			actionIterator = parseTable.find(std::make_pair(newState, ruleIterator->first));
+			actionIterator = parseTable.find(std::make_pair(currentState, ruleIterator->first));
 			auto state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
+			visit(parent);
 		}
 		else if (action == 'a') {
 			size_t ruleIndex = actionIterator->second.second;
@@ -456,7 +491,6 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 				}
 				parseStack.pop_back();
 			}
-			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
 			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
 			break;
 		}
@@ -464,6 +498,7 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 			error = true;
 			break;
 		}
+		
 	}
 	if (!error) {
 		tree = std::any_cast<parse_node_ptr>(*parseStack.rbegin());		
@@ -565,218 +600,39 @@ void testLR0closure2(const Grammar& grammar)
     assert(closedSet == expectedSet);
 }
 
-void testLR0closure3()
+
+void testGrammar(const Grammar& grammar, const grammar_rule& mainRule, const std::string& input)
 {
-    /*
-    (0) S -> E eof
-    (1) E -> E * B
-    (2) E -> E + B
-    (3) E -> B
-    (4) B -> 0
-    (5) B -> 1
-    */
+	auto term = terminals(grammar);
+	std::cout << "terminals" << std::endl;
+	for (const auto& t : term) {
+		std::cout << t << std::endl;
+	}
+	std::cout << "non-terminals" << std::endl;
+	for (const auto& t : nonTerminals(grammar)) {
+		std::cout << t << std::endl;
+	}
 
-    Grammar grammar = {
-        { 'S',{ 'E' } },
-        { 'E',{ 'E', '*', 'B'} },
-        { 'E',{ 'E', '+', 'B' } },
-        { 'E',{ 'B' } },
-        { 'B',{ '0' } },
-        { 'B',{ '1' } }
-    };
-    std::set<item> initial_set;
-    grammar_rule mainRule('S', { 'E' });
-    item initial_item(mainRule, 0);
-    initial_set.insert(initial_item);
-    auto closedSet = lr0closure(initial_set, grammar);
-    std::cout << "closedSet" << std::endl;
-    showItemSet(grammar, closedSet);
-    auto gotoSet = lr0goto(closedSet, 'E', grammar);
-    std::cout << "gotoSet" << std::endl;
-    showItemSet(grammar, gotoSet);
-
-    StateCollection stateCollection;
-
-    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
-    for (auto edge : CC) {
-        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
-    }
-
-    std::ofstream out("graph.dot");
-    out << generateDot(grammar, stateCollection, CC).c_str();
-}
-
-void testLR0closure4()
-{
-    /*
-    (0) S -> E eof
-    (1) E -> E * B
-    (2) E -> E + B
-    (3) E -> B
-    (4) B -> 0
-    (5) B -> 1
-    */
-
-    Grammar grammar = {
-        { 'S',{ 'E' } },
-        { 'E',{ 'E', '+', 'E' } },
-        { 'E',{ '1' } },
-    };
-    std::set<item> initial_set;
-    grammar_rule mainRule('S', { 'E' });
-    item initial_item(mainRule, 0);
-    initial_set.insert(initial_item);
-    auto closedSet = lr0closure(initial_set, grammar);
-    std::cout << "closedSet" << std::endl;
-    showItemSet(grammar, closedSet);
-    auto gotoSet = lr0goto(closedSet, 'E', grammar);
-    std::cout << "gotoSet" << std::endl;
-    showItemSet(grammar, gotoSet);
-
-    StateCollection stateCollection;
-
-    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
-    for (auto edge : CC) {
-        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
-    }
-
-    std::ofstream out("graph.dot");
-    out << generateDot(grammar, stateCollection, CC).c_str();
-}
-
-
-/*
-Z -> E$ E -> T | E ’ + ’ T
-T -> i
-*/
-
-
-void testExprGrammar()
-{
-    Grammar grammar = {
-        { 'Z',{ 'E', '$'} },
-        { 'E',{ 'T'} },
-        { 'E',{ 'E', '+', 'T' } },
-        { 'T',{ '1' } },
-        { 'T',{ '(', 'E', ')'} } 
-    };
-    
-    std::set<item> initial_set;
-    grammar_rule mainRule('Z', { 'E', '$' });
-    item initial_item(mainRule, 0);
-    initial_set.insert(initial_item);
-    auto closedSet = lr0closure(initial_set, grammar);
-    std::cout << "closedSet" << std::endl;
-    showItemSet(grammar, closedSet);
-    auto gotoSet = lr0goto(closedSet, 'E', grammar);
-    std::cout << "gotoSet" << std::endl;
-    showItemSet(grammar, gotoSet);
-
-    StateCollection stateCollection;
-
-    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
-    for (auto edge : CC) {
-        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
-    }
-
-    std::ofstream out("graph.dot");
-    out << generateDot(grammar, stateCollection, CC).c_str();
-}
-
-void testExprGrammar2()
-{
-    Grammar grammar = {
-        { 'Z',{ 'E', '$' } },
-        { 'E',{ '{', 'T' , '}' } },
-        { 'T',{ '1' } }
-    };
-
-    std::set<item> initial_set;
-    grammar_rule mainRule('Z', { 'E', '$' });
-    item initial_item(mainRule, 0);
-    initial_set.insert(initial_item);
-    auto closedSet = lr0closure(initial_set, grammar);
-    std::cout << "closedSet" << std::endl;
-    showItemSet(grammar, closedSet);
-    auto gotoSet = lr0goto(closedSet, 'E', grammar);
-    std::cout << "gotoSet" << std::endl;
-    showItemSet(grammar, gotoSet);
-
-    StateCollection stateCollection;
-
-    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
-    for (auto edge : CC) {
-        std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
-    }
-
-    std::ofstream out("graph.dot");
-    out << generateDot(grammar, stateCollection, CC).c_str();
-}
-
-void testExprGrammar3()
-{
-    /*
-    Grammar grammar = {
-        { 'Z',{ 'E', '$' } },
-        { 'E',{ '{', 'T' , '}' } },
-        { 'T',{ '1' } }
-    };
-    */
-    Grammar grammar = {
-        { 'Z',{ 'E', '$'} },
-        { 'E',{ 'T' } },
-        { 'E',{ 'E', '+', 'T' } },
-        { 'T',{ '1' } },
-		{ 'T',{ '0' } },
-        { 'T',{ '(', 'E', ')' } }
-    };
-    auto term = terminals(grammar);
-    std::cout << "terminals" << std::endl;
-    for (const auto& t : term) {
-        std::cout << t << std::endl;
-    }
-    std::cout << "non-terminals" << std::endl;
-    for (const auto& t : nonTerminals(grammar)) {
-        std::cout << t << std::endl;
-    }
-
-    StateCollection stateCollection;
-    grammar_rule mainRule('Z', { 'E', '$' });
-    auto CC = generateLR0Items(grammar, mainRule, stateCollection);
+	StateCollection stateCollection;
+	auto CC = generateLR0Items(grammar, mainRule, stateCollection);
 	std::ofstream out("graph.dot");
 	out << generateDot(grammar, stateCollection, CC).c_str();
-    auto parseTable = generateActionTable(stateCollection, CC, grammar);
-    dumpActionTable(parseTable);
-    dumpGrammar(grammar);
+	auto parseTable = generateActionTable(stateCollection, CC, grammar);
+	dumpActionTable(parseTable);
+	dumpGrammar(grammar);
 	std::string output;
-	parse("1+0$", parseTable, grammar, output);
-	for (const auto& token : output) {
-		std::cout << token << ",";
-	}
-	std::cout << std::endl;
 	parse_node_ptr tree;
-	parseTree("1+0$", parseTable, grammar, tree);
+	parseTree(input, parseTable, grammar, tree);
 	size_t indent = 0;
 	visit(tree);
 
 }
 
+
+
 int main()
 {
-    //testExprGrammar();
-    testExprGrammar3();
-    /*
-    Grammar grammar = {
-        {'M',{'S', 'E'}},
-        {'S',{'E'}},
-        {'E',{'0'}},
-        {'E',{'1'}}
-    };
-    
-    testLR0closure1(grammar);
-    testLR0closure2(grammar);
-    
-    testLR0closure4();
-    */
-    return 0;
+
+	testGrammar(grammar2, { 'S',{ 'P', '$' } }, "(1)$");
+	return 0;
 }
