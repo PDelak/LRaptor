@@ -48,7 +48,7 @@ editor-view: layout[
 	
 	source: area #13181E 410x500 no-border grammar-txt font [
 		name: font-fixed
-		size: 9
+		size: 15
 		color: hex-to-rgb #9EBACB
 	]
 

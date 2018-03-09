@@ -322,7 +322,7 @@ generate-dot: function [grammar state-collection edge-set] [
   output: make string! ""
   append output "digraph grammar {^/"
   append output "bgcolor=transparent; ^/"
-  append output "node [color=lightblue,style=filled fontname = ^"font-fixed^" fontsize=11]; ^/"
+  append output "node [color=lightblue,style=filled fontname = ^"font-fixed^" fontsize=15]; ^/"
   foreach edge edge-set [
     from: first edge state-collection
     to: second edge state-collection
