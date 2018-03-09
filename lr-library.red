@@ -285,9 +285,14 @@ generate-lr0-items-set: function[main-rule grammar state-collection] [
 ]
 
 ; print all items exist in lr0 items
-serialize-lr0-items: function [lr0-items grammar] [
+serialize-lr0-items: function [id lr0-items grammar] [
   output: make string! ""
   if none? lr0-items [ return output ]
+
+  append output " State "
+  append output id
+  append output "^/"
+
   foreach item lr0-items [
     append output item/rule-lhs
     append output " -> "
@@ -324,12 +329,13 @@ generate-dot: function [grammar state-collection edge-set] [
   append output "bgcolor=transparent; ^/"
   append output "node [color=lightblue,style=filled fontname = ^"font-fixed^" fontsize=15]; ^/"
   foreach edge edge-set [
-    from: first edge state-collection
+    from: first edge state-collection    
     to: second edge state-collection
     from-item-set: check-item-set-exists-by-id first edge state-collection
     to-item-set: check-item-set-exists-by-id second edge state-collection
     token: ""
-    append output from grammar 
+
+    append output from grammar
     append output "->"
     append output to grammar 
     append output " [label="
@@ -341,13 +347,13 @@ generate-dot: function [grammar state-collection edge-set] [
     append output "^/"
     append output from
     append output " [label=^""
-    append output serialize-lr0-items from-item-set grammar
+    append output serialize-lr0-items from from-item-set grammar
     append output "^" "
     append output "color=lightblue ]"
     append output "^/"
     append output to
     append output " [label=^""
-    append output serialize-lr0-items to-item-set grammar
+    append output serialize-lr0-items to to-item-set grammar
     append output "^" "
     append output "color=lightblue ]"
     append output "^/"
