@@ -342,7 +342,7 @@ generate-dot: function [grammar state-collection edge-set] [
     append output "^""
     append output third edge
     append output "^""
-    append output " color=lightblue fontcolor=white fontname = ^"font-fixed^" fontsize=11 "
+    append output " color=lightblue fontcolor=white fontname = ^"font-fixed^" fontsize=15 "
     append output "]^/"
     append output "^/"
     append output from
