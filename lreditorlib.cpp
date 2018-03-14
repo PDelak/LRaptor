@@ -37,17 +37,18 @@ struct parse_node
 };
 
 
-void visit(std::string& prefix, const parse_node_ptr& node, std::string& output)
+void visit(std::string& prefix, const parse_node_ptr& node, std::string& output, bool& root)
 {
 	if (!node) return;
 	for (auto& e : prefix) {
 		e = ' ';
 	}
-	prefix = prefix + "|-";
+	if (!root) prefix = prefix + "|-";
+	root = false;
 	output += "\n" + prefix + node->token;
 
 	for (const auto& child : node->children) {
-		visit(prefix, child, output);
+		visit(prefix, child, output, root);
 		
 	}
 	prefix.pop_back();
@@ -57,7 +58,8 @@ void visit(std::string& prefix, const parse_node_ptr& node, std::string& output)
 void visit(const parse_node_ptr& node, std::string& output)
 {
 	std::string prefix = "";
-	visit(prefix, node, output);
+	bool root = true;
+	visit(prefix, node, output, root);
 	std::cout << std::endl;
 }
 
@@ -706,14 +708,15 @@ int main()
 	std::string output;
 	parse_node_ptr tree;
 	std::string stackOutput;
-	parseTree(input, parseTable, grammar, tree, stackOutput);
+	bool error = parseTree(input, parseTable, grammar, tree, stackOutput);
+	(void)error;
 	std::string visitOutput;
 	visit(tree, visitOutput);
 	std::ofstream out("parseTree.txt");
 	out << "Stack : [ ";
 	out << stackOutput;
 	out << " ]";
-	out << '\n';	
+	out << '\n';
 	out << visitOutput;
 	
 	std::ofstream stackOut("stack.txt");
