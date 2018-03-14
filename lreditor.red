@@ -8,7 +8,6 @@ Red [
 #include %grammar-parser.red
 
 
-
 empty-graph: { digraph grammar {}}
 
 grammar-txt: {}
@@ -84,9 +83,11 @@ editor-view: layout[
 	react [
 		grammar: []	
 		print source/text
-		if (empty? source/text) and (not equal? previous-grammar grammar ) [
-			graph: generate-graph grammar                                        
-			previous-grammar: copy grammar
+		if (empty? source/text) [
+		    if not equal? previous-grammar grammar [
+				graph: generate-graph grammar                                        
+				previous-grammar: copy grammar
+			]
 		]
 		if not empty? source/text 
 		[        
@@ -106,6 +107,9 @@ editor-view: layout[
 					graph: generate-graph grammar                                        
 					previous-grammar: copy grammar										
 					write %grammar.txt convert-grammar grammar
+					attempt/safer [				
+							face/pane: layout/tight/only load {image graph loose}
+					]
 				] 
 				
 			]
@@ -126,9 +130,6 @@ editor-view: layout[
 		if empty? inputSource/text [
 			parseTree/text: ""
 			previous-input: copy input-txt
-		]
-		attempt/safer [				
-				face/pane: layout/tight/only load {image graph loose}
 		]
 	] 
 
