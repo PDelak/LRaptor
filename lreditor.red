@@ -87,6 +87,10 @@ editor-view: layout[
 		    if not equal? previous-grammar grammar [
 				graph: generate-graph grammar                                        
 				previous-grammar: copy grammar
+				attempt/safer [				
+					face/pane: layout/tight/only load {image graph loose}
+				]
+
 			]
 		]
 		if not empty? source/text 
