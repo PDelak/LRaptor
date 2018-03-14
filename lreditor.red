@@ -73,13 +73,13 @@ editor-view: layout[
 	backdrop #2C3339
 	across
 	
-	source: area #13181E 410x500 no-border grammar-txt font [
+	source: area #13181E 200x500 no-border grammar-txt font [
 		name: font-fixed
 		size: 15
 		color: hex-to-rgb #9EBACB
 	]
 
-	graphPanel: panel 500x500 #13181E 
+	graphPanel: panel 300x500 #13181E 
 	react [
 		grammar: []	
 		print source/text
@@ -137,13 +137,13 @@ editor-view: layout[
 		]
 	] 
 
-	inputSource: area #13181E 410x500 no-border input-txt font [
+	inputSource: area #13181E 200x500 no-border input-txt font [
 		name: font-fixed
 		size: 15
 		color: hex-to-rgb #9EBACB
 	]
 	
-	parseTree: area #13181E 410x500 no-border input-txt font [
+	parseTree: area #13181E 200x500 no-border input-txt font [
 		name: font-fixed
 		size: 20
 		color: hex-to-rgb #9EBACB
