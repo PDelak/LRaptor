@@ -18,6 +18,7 @@ stack-txt: {}
 
 
 previous-grammar: load grammar-txt
+previous-input: load input-txt
 
 convert-grammar: function [grammar] [
   
@@ -100,34 +101,35 @@ editor-view: layout[
 			either error? grammar [ print "error" ] 
 			[
 				print "good"
-				either not equal? previous-grammar grammar 
+				if not equal? previous-grammar grammar 
 				[					
 					graph: generate-graph grammar                                        
-					previous-grammar: copy grammar					
-					convert-grammar grammar
-					write %lrgrammar.txt grammar-txt
+					previous-grammar: copy grammar										
 					write %grammar.txt convert-grammar grammar
 				] 
-				[
-					print "equal"					
-				]
+				
 			]
 		]
-		if not empty? inputSource/text [
-			print inputSource/text
-			inputValue: copy inputSource/text
-			write %input.txt trim inputValue			
-			;parseTree/text: inputSource/text
-			call-command: "lrtreevisitor.exe"
-			call/wait call-command
-			ptree: read %parseTree.txt
-			parseTree/text: ptree
+		if not empty? input-txt  [
+			if not equal? previous-input input-txt [
+			    previous-input: copy input-txt
+				prin "input-txt : "
+				print input-txt
+				inputValue: copy inputSource/text
+				write %input.txt trim inputValue			
+				call-command: "lrtreevisitor.exe"
+				call/wait call-command
+				ptree: read %parseTree.txt
+				parseTree/text: ptree
+			]
 		]
 		if empty? inputSource/text [
 			parseTree/text: ""
+			previous-input: copy input-txt
 		]
-
-		attempt/safer [face/pane: layout/tight/only load {image graph loose}]                
+		attempt/safer [				
+				face/pane: layout/tight/only load {image graph loose}
+		]
 	] 
 
 	inputSource: area #13181E 410x500 no-border input-txt font [
