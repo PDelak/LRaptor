@@ -11,7 +11,7 @@ parse-grammar: function[txt internal-repr] [
   digit:   charset "0123456789"
   letters: charset [#"a" - #"z" #"A" - #"Z"]
   delimiter: charset [#"^"" #"'"]
-  special: charset "+-/*!@^#^^$%&^(^)^""
+  special: charset "+-/*!@^#^^$%&^(^)^"^{^}"
   chars:   union letters digit
   word:    [some chars]
   string: [delimiter some [word | special] delimiter]
