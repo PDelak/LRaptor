@@ -713,9 +713,21 @@ int main()
 	std::string visitOutput;
 	visit(tree, visitOutput);
 	std::ofstream out("parseTree.txt");
-	out << "Stack : [ ";
-	out << stackOutput;
-	out << " ]";
+	out << "Stack (Token,State): [";
+	size_t index = 0;
+	for (const auto& elem : stackOutput) {
+		if (index % 2 == 0) {
+			out << "(";
+			out << elem;
+			out << ",";
+		}
+		else {
+			out << elem;
+			out << ")";
+		}				
+		++index;
+	}
+	out << "]";
 	out << '\n';
 	out << visitOutput;
 	
