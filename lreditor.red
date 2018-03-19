@@ -161,14 +161,14 @@ editor-view/actors: make face! [
 		        ; source area takes 40 percent of whole screen     
 				f/pane/1/size/x: f/size/x * 30 / 100
 				; y size is subtracted by 20
-				f/pane/1/size/y: f/size/y * 60 / 100 - 20
+				f/pane/1/size/y: f/size/y * 50 / 100 - 20
 				; graph panel takes 60 percent
 				f/pane/2/size/x: f/size/x * 35 / 100 - 25
 				f/pane/2/size/y: f/size/y * 100 / 100 - 20
 
 				f/pane/3/size/x: f/size/x * 30 / 100
 				; y size is subtracted by 20
-				f/pane/3/size/y: f/size/y * 10 / 100 - 20
+				f/pane/3/size/y: f/size/y * 50 / 100 - 5
 
 				;f/pane/5/size/x: f/size/x * 30 / 100
 				; y size is subtracted by 20
