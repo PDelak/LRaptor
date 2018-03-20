@@ -1,16 +1,18 @@
 #include "lrlib.h"
 
-std::pair<char, std::vector<char>> readRule(const std::string& line, size_t ruleIndex, std::pair<char, std::vector<char>>& mainRule)
+std::pair<std::string, std::vector<std::string>> readRule(const std::string& line, size_t ruleIndex, std::pair<std::string, std::vector<std::string>>& mainRule)
 {
-	std::pair<char, std::vector<char>> rule;
+	std::pair<std::string, std::vector<std::string>> rule;
 	auto begin = line.begin();
 	if (begin == line.end()) return rule;
 	auto lhs = *begin;
 	++begin;
-	std::vector<char> rhs;
+	std::vector<std::string> rhs;
 	while (begin != line.end()) {
 		if (*begin == '\'') {++begin; continue;}
-		if (*begin != ' ') rhs.push_back(*begin);
+		std::string temp;
+		temp.push_back(*begin);
+		if (*begin != ' ') rhs.push_back(temp);
 		++begin;		
 	}	
 	rule.first = lhs;
@@ -26,18 +28,18 @@ Grammar readGrammar(const std::string& grammar_file_name, grammar_rule& mainR)
 	std::ifstream grammar_file(grammar_file_name);
 	if (!grammar_file) return grammar;
 	size_t ruleIndex = 0;
-	std::pair<char, std::vector<char>> mainRule;
+	std::pair<std::string, std::vector<std::string>> mainRule;
 	while (std::getline(grammar_file, line))  
 	{
 		auto rule = readRule(line, ruleIndex, mainRule);
-		if (ruleIndex == 0) rule.second.push_back('$');
+		if (ruleIndex == 0) rule.second.push_back("$");
 		grammar.insert(rule);
 		++ruleIndex;
 	}
 	dumpGrammar(grammar);
 	mainR.lhs = mainRule.first;
 	mainR.rhs = mainRule.second;
-	mainR.rhs.push_back('$');
+	mainR.rhs.push_back("$");
 	std::cout << "mainRule : " << mainR.lhs << std::endl;
 	return grammar;
 }
@@ -63,7 +65,7 @@ std::string readInput(const std::string& input_file_name)
 int main()
 {	
 	
-	grammar_rule mainRule(' ', {});
+	grammar_rule mainRule(" ", {});
 	auto grammar = readGrammar("grammar.txt", mainRule);
 	auto input = readInput("input.txt");
 	

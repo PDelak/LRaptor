@@ -18,15 +18,15 @@
 #include <algorithm>
 
 template<typename T>
-char toString(T value)
+std::string toString(T value)
 {
 	std::stringstream sstr;
 	sstr << value;
-	return sstr.str()[0];
+	return sstr.str();
 }
 
-typedef std::multimap<char, std::vector<char>> Grammar;
-typedef std::map<std::pair<size_t, char>, std::pair<char, size_t>> ParseTable;
+typedef std::multimap<std::string, std::vector<std::string>> Grammar;
+typedef std::map<std::pair<size_t, std::string>, std::pair<std::string, size_t>> ParseTable;
 
 
 struct parse_node;
@@ -35,8 +35,8 @@ typedef std::shared_ptr<parse_node> parse_node_ptr;
 struct parse_node
 {
 	parse_node() :token(0) {}
-	parse_node(char t) :token(t) {}
-	char token;
+	parse_node(const std::string& t) :token(t) {}
+	std::string token;
 	std::vector<parse_node_ptr> children;
 };
 
@@ -70,11 +70,11 @@ void visit(const parse_node_ptr& node, std::string& output)
 
 struct grammar_rule
 {
-    grammar_rule(char l, const std::vector<char>& r)
+    grammar_rule(const std::string& l, const std::vector<std::string>& r)
         :lhs(l), rhs(r)
     {}
 
-	grammar_rule(char l, const std::initializer_list<char>& r)
+	grammar_rule(const std::string& l, const std::initializer_list<std::string>& r)
 		:lhs(l)
     {
         auto b = r.begin();
@@ -83,10 +83,10 @@ struct grammar_rule
             rhs.push_back(*b);
         }
     }
-    char lhs;
+    std::string lhs;
     bool operator<(const grammar_rule& r) const { return lhs < r.lhs || (lhs == r.lhs && rhs < r.rhs);}
     bool operator==(const grammar_rule& r) const { return lhs == r.lhs && rhs == r.rhs; }
-    std::vector<char> rhs;
+    std::vector<std::string> rhs;
 };
 
 size_t getGrammarRuleIndex(const Grammar& grammar, const grammar_rule& rule)
@@ -127,7 +127,7 @@ std::set<item> lr0closure(const std::set<item>& is, const Grammar& grammar)
         result.insert(LR0Item);
         openItems.erase(openItems.begin());
         if (LR0Item.rule.rhs.size() <= LR0Item.dotPosition) continue;
-        char nextLHSProduction = LR0Item.rule.rhs[LR0Item.dotPosition];
+        std::string nextLHSProduction = LR0Item.rule.rhs[LR0Item.dotPosition];
         auto rule_iter = grammar.equal_range(nextLHSProduction);
         for (rule_iter; rule_iter.first != rule_iter.second; ++rule_iter.first) {
             grammar_rule r(rule_iter.first->first, rule_iter.first->second);
@@ -139,7 +139,7 @@ std::set<item> lr0closure(const std::set<item>& is, const Grammar& grammar)
     return result;
 }
 
-std::set<item> lr0goto(const std::set<item>& is, char token, const Grammar& grammar)
+std::set<item> lr0goto(const std::set<item>& is, const std::string& token, const Grammar& grammar)
 {
     std::set<item> gotoSet;
 
@@ -189,9 +189,9 @@ void showItemSet(const Grammar& grammar, const std::set<item>& closedSet)
     std::cout << serializeItemSet(grammar, closedSet, 0).c_str();
 }
 
-std::set<char> tokens(const Grammar& grammar)
+std::set<std::string> tokens(const Grammar& grammar)
 {
-    std::set<char> tokens;
+    std::set<std::string> tokens;
     for (auto rule : grammar) {
         tokens.insert(rule.first);
         for (auto rhs : rule.second) {
@@ -203,10 +203,10 @@ std::set<char> tokens(const Grammar& grammar)
 
 struct Edge
 {
-    Edge(size_t f, size_t t, char tk):from(f), to(t), token(tk) {}
+    Edge(size_t f, size_t t, const std::string& tk):from(f), to(t), token(tk) {}
     size_t from;
     size_t to;
-    char token;
+    std::string token;
     bool operator < (const Edge& e) const {
         return (from < e.from) || (from == e.from && to < e.to) || (from == e.from && to == e.to && token < e.token);
     }
@@ -299,11 +299,11 @@ std::set<Edge> generateLR0Items(const Grammar& grammar, const grammar_rule& main
     return gotoEdges;
 }
 
-std::set<char> terminals(const Grammar& grammar)
+std::set<std::string> terminals(const Grammar& grammar)
 {
-    std::set<char> terminalsSet;
+    std::set<std::string> terminalsSet;
     auto allTokens = tokens(grammar);
-    std::set<char> nonTerminals;
+    std::set<std::string> nonTerminals;
     for (auto rule : grammar) {
         nonTerminals.insert(rule.first);
     }
@@ -315,9 +315,9 @@ std::set<char> terminals(const Grammar& grammar)
     return terminalsSet;
 }
 
-std::set<char> nonTerminals(const Grammar& grammar)
+std::set<std::string> nonTerminals(const Grammar& grammar)
 {
-    std::set<char> nonTerminalsSet;
+    std::set<std::string> nonTerminalsSet;
     for (auto rule : grammar) {
         nonTerminalsSet.insert(rule.first);
     }
@@ -332,9 +332,9 @@ ParseTable generateActionTable(const StateCollection& stateCollection, const std
     for (auto edge : lr0CanonicalCollection) {
         std::cout << "from : " << edge.from << " to : " << edge.to << " token : " << edge.token << std::endl;
         
-        char action = 'g';
+        std::string action = "g";
         if (terms.find(edge.token) != terms.end()) {
-            action = 's';
+            action = "s";
         }
         actionTable[std::make_pair(edge.from, edge.token)] = std::make_pair(action, edge.to);
     }
@@ -347,8 +347,8 @@ ParseTable generateActionTable(const StateCollection& stateCollection, const std
         auto item = *itemSet.begin();
         if (item.dotPosition == item.rule.rhs.size()) {
             size_t ruleNumber = getGrammarRuleIndex(grammar, item.rule);            
-            char action = 'r';
-            if (item.rule.rhs[item.dotPosition-1] == '$') action = 'a';			
+            std::string action = "r";
+            if (item.rule.rhs[item.dotPosition-1] == "$") action = "a";			
             for (const auto token : terms) {
                 actionTable[std::make_pair(i, token)] = std::make_pair(action, ruleNumber);
             }
@@ -363,7 +363,7 @@ bool parse(const std::string& input, const ParseTable& parseTable, const Grammar
 	std::vector<std::any> parseStack;
 	parseStack.push_back(std::make_any<size_t>(0));
 	auto tokenPtr = input.begin();
-	char token;
+	std::string token;
 	bool error = false;
 	if (tokenPtr == input.end()) return error;
 	
@@ -375,34 +375,34 @@ bool parse(const std::string& input, const ParseTable& parseTable, const Grammar
 		if (actionIterator == parseTable.end()) { error = true; break; }
 
 		auto action = actionIterator->second.first;	
-		if (action == 's') {
-			parseStack.push_back(std::make_any<char>(token));
+		if (action == "s") {
+			parseStack.push_back(std::make_any<std::string>(token));
 			auto newState = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(newState));
 			++tokenPtr;
 		}
-		else if (action == 'r') {
+		else if (action == "r") {
 			size_t ruleIndex = actionIterator->second.second;
 			auto ruleIterator = grammar.begin();
 			std::advance(ruleIterator , ruleIndex);
 			auto rhsSize = ruleIterator->second.size();
 			for(size_t i = 0; i < rhsSize * 2; ++i) parseStack.pop_back();
 			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
-			output.push_back(ruleIterator->first);
-			parseStack.push_back(std::make_any<char>(ruleIterator->first));
+			output.append(ruleIterator->first);
+			parseStack.push_back(std::make_any<std::string>(ruleIterator->first));
 			actionIterator = parseTable.find(std::make_pair(newState, ruleIterator->first));
 			auto state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
 		}
-		else if (action == 'a') {
+		else if (action == "a") {
 			size_t ruleIndex = actionIterator->second.second;
 			auto ruleIterator = grammar.begin();
 			std::advance(ruleIterator, ruleIndex);
 			auto rhsSize = ruleIterator->second.size();
 			for (size_t i = 0; i < rhsSize * 2; ++i) parseStack.pop_back();
 			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
-			output.push_back(ruleIterator->first);
-			parseStack.push_back(std::make_any<char>(ruleIterator->first));		
+			output.append(ruleIterator->first);
+			parseStack.push_back(std::make_any<std::string>(ruleIterator->first));		
 			break;
 		}
 		else {
@@ -419,7 +419,7 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 	std::vector<std::any> parseStack;
 	parseStack.push_back(std::make_any<size_t>(0));
 	auto tokenPtr = input.begin();
-	char token;
+	std::string token;
 	bool error = false;
 	if (tokenPtr == input.end()) return error;
 	parse_node_ptr root;
@@ -431,16 +431,16 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 		if (actionIterator == parseTable.end()) { error = true; break; }
 
 		auto action = actionIterator->second.first;
-		if (action == 's') {
+		if (action == "s") {
 			auto node = parse_node_ptr(new parse_node(token));
 			parseStack.push_back(std::make_any<parse_node_ptr>(node));
 			auto newState = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(newState));
 			++tokenPtr;
-			stackOutput.push_back(node->token);
-			stackOutput.push_back(toString(newState));
+			stackOutput.append(node->token);
+			stackOutput.append(toString(newState));
 		}
-		else if (action == 'r') {
+		else if (action == "r") {
 			size_t ruleIndex = actionIterator->second.second;
 			auto ruleIterator = grammar.begin();
 			std::advance(ruleIterator, ruleIndex);
@@ -461,11 +461,11 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 			actionIterator = parseTable.find(std::make_pair(currentState, ruleIterator->first));
 			auto state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
-			stackOutput.push_back(parent->token);
-			stackOutput.push_back(toString(state));
+			stackOutput.append(parent->token);
+			stackOutput.append(toString(state));
 			root = parent;
 		}
-		else if (action == 'a') {
+		else if (action == "a") {
 			size_t ruleIndex = actionIterator->second.second;
 			auto ruleIterator = grammar.begin();
 			std::advance(ruleIterator, ruleIndex);
@@ -482,8 +482,8 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 
 			}
 			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
-			stackOutput.push_back(parent->token);
-			stackOutput.push_back(toString(state));
+			stackOutput.append(parent->token);
+			stackOutput.append(toString(state));
 			root = parent;
 			break;
 		}
@@ -563,13 +563,13 @@ std::string generateDot(const Grammar& grammar, const StateCollection& stateColl
 void testLR0closure1(const Grammar& grammar)
 {
     std::set<item> initial_set;
-    grammar_rule mainRule('E', { '0' });
+    grammar_rule mainRule("E", { "0" });
     item initial_item(mainRule, 0);
     initial_set.insert(initial_item);
     auto closedSet = lr0closure(initial_set, grammar);
 
     std::set<item> expectedSet;
-    grammar_rule rule('E', { '0' });
+    grammar_rule rule("E", { "0" });
     item expectedItem(rule, 0);
     expectedSet.insert(expectedItem);
     assert(closedSet == expectedSet);
@@ -578,19 +578,19 @@ void testLR0closure1(const Grammar& grammar)
 void testLR0closure2(const Grammar& grammar)
 {
     std::set<item> initial_set;
-    grammar_rule mainRule('M', {'S', 'E' });
+    grammar_rule mainRule("M", {"S", "E" });
     item initial_item(mainRule, 1);
     initial_set.insert(initial_item);
     auto closedSet = lr0closure(initial_set, grammar);
 
     std::set<item> expectedSet;
-    grammar_rule rule('M', { 'S', 'E' });
+    grammar_rule rule("M", { "S", "E" });
     item expectedItem(rule, 1);
     expectedSet.insert(expectedItem);
-    rule = grammar_rule('E', { '0' });
+    rule = grammar_rule("E", { "0" });
     expectedItem = item(rule, 0);
     expectedSet.insert(expectedItem);
-    rule = grammar_rule('E', { '1' });
+    rule = grammar_rule("E", { "1" });
     expectedItem = item(rule, 0);
     expectedSet.insert(expectedItem);
     assert(closedSet == expectedSet);
