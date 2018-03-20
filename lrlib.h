@@ -55,8 +55,8 @@ void visit(std::string& prefix, const parse_node_ptr& node, std::string& output,
 		visit(prefix, child, output, root);
 		
 	}
-	prefix.pop_back();
-	prefix.pop_back();
+	if (!prefix.empty()) prefix.pop_back();
+	if (!prefix.empty()) prefix.pop_back();
 }
 
 void visit(const parse_node_ptr& node, std::string& output)
