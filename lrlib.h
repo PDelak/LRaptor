@@ -414,7 +414,7 @@ bool parse(const std::string& input, const ParseTable& parseTable, const Grammar
 	return error;
 }
 
-bool parseTree(const std::string& input, const ParseTable& parseTable, const Grammar& grammar, parse_node_ptr& tree, std::string& stackOutput)
+bool parseTree(const std::string& input, const ParseTable& parseTable, const Grammar& grammar, parse_node_ptr& tree, std::vector<std::string>& stackOutput)
 {
 	std::vector<std::any> parseStack;
 	parseStack.push_back(std::make_any<size_t>(0));
@@ -437,8 +437,8 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 			auto newState = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(newState));
 			++tokenPtr;
-			stackOutput.append(node->token);
-			stackOutput.append(toString(newState));
+			stackOutput.push_back(node->token);
+			stackOutput.push_back(toString(newState));
 		}
 		else if (action == "r") {
 			size_t ruleIndex = actionIterator->second.second;
@@ -461,8 +461,8 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 			actionIterator = parseTable.find(std::make_pair(currentState, ruleIterator->first));
 			auto state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
-			stackOutput.append(parent->token);
-			stackOutput.append(toString(state));
+			stackOutput.push_back(parent->token);
+			stackOutput.push_back(toString(state));
 			root = parent;
 		}
 		else if (action == "a") {
@@ -482,8 +482,8 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 
 			}
 			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
-			stackOutput.append(parent->token);
-			stackOutput.append(toString(state));
+			stackOutput.push_back(parent->token);
+			stackOutput.push_back(toString(state));
 			root = parent;
 			break;
 		}
@@ -618,7 +618,7 @@ void testGrammar(const Grammar& grammar, const grammar_rule& mainRule, const std
 	dumpGrammar(grammar);
 	std::string output;
 	parse_node_ptr tree;
-	std::string stackOutput;
+	std::vector<std::string> stackOutput;
 	parseTree(input, parseTable, grammar, tree, stackOutput);
 	size_t indent = 0;
 	std::string visitOutput;

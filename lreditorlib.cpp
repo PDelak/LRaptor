@@ -149,13 +149,13 @@ int main()
 	dumpGrammar(grammar);
 	std::string output;
 	parse_node_ptr tree;
-	std::string stackOutput;
+	std::vector<std::string> stackOutput;
 	bool error = parseTree(input, parseTable, grammar, tree, stackOutput);
 	(void)error;
 	std::string visitOutput;
 	visit(tree, visitOutput);
 	std::ofstream out("parseTree.txt");
-	out << "Stack (Token,State): [";
+	out << "Stack (Token, State)\n";
 	size_t index = 0;
 	for (const auto& elem : stackOutput) {
 		if (index % 2 == 0) {
@@ -165,15 +165,16 @@ int main()
 		}
 		else {
 			out << elem;
-			out << ")";
+			out << ")\n";
 		}				
 		++index;
-	}
-	out << "]";
+	}	
 	out << '\n';
 	out << visitOutput;
 	
 	std::ofstream stackOut("stack.txt");
-	stackOut << stackOutput;
+	for (const auto& element : stackOutput) {
+		stackOut << element;
+	}
 	return 0;
 }
