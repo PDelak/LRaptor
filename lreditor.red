@@ -19,18 +19,21 @@ stack-txt: {}
 previous-grammar: load grammar-txt
 previous-input: load input-txt
 
-convert-grammar: function [grammar] [
-  
-  print "convert grammar"
-  str: make string![]
-    
-  foreach [lhs rhs] grammar [
-    foreach rhsRule rhs [
-    	append str lhs
-    	append str " "        	
-    	append str rhsRule
-    	append str "^/"
-    ]  	  	
+convert-grammar: function [grammar] [  
+	print "convert grammar"
+	str: make string![]
+	foreach [lhs rhs] grammar [
+		foreach rhsRule rhs [
+			first: make integer! 0
+			append str lhs
+			append str " "        	
+			foreach r rhsRule [
+				if first > 0 [ append str " " ]
+				append str r
+				first: 1
+			]
+			append str "^/"
+		]  	  	
   ]
   print str
   return str
