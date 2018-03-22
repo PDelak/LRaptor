@@ -192,6 +192,31 @@ editor-view/actors: make face! [
 				;append input-txt ""		
 				;append stack-txt ""		
 		]
+	    on-menu: func [face [object!] event [event!]][
+	        if event/picked = 'load [print "load menu selected"	   
+
+	        	clear grammar-txt
+	        	grammar-file: read request-file/filter ["grammars" "*.gram"]
+	        	print grammar-file
+	        	append grammar-txt grammar-file
+	        ]
+	        if event/picked = 'save [print "save menu selected"
+	        	save-file: request-file/save
+	        	write save-file grammar-txt
+	        ]
+	        if event/picked = 'quit [unview/all]
+	    ]
 ]
+
+
+editor-view/menu: [
+    "File" [
+        "Load grammar" load
+        "Save grammar" save
+        ---
+        "Quit" quit
+    ]
+]
+
 
 view editor-view
