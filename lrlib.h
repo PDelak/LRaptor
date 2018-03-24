@@ -59,6 +59,25 @@ void visit(std::string& prefix, const parse_node_ptr& node, std::string& output,
 	if (!prefix.empty()) prefix.pop_back();
 }
 
+void visitBlock(std::string& prefix, const parse_node_ptr& node, std::string& output)
+{
+	if (!node) return;
+	if (node->token == "$") return;
+	output += "[ \"" +  node->token + "\" ";
+
+	for (const auto& child : node->children) {
+		visitBlock(prefix, child, output);
+	}
+	output += "]";
+}
+
+void visitBlock(const parse_node_ptr& node, std::string& output)
+{
+	std::string prefix = "";
+	visitBlock(prefix, node, output);
+}
+
+
 void visit(const parse_node_ptr& node, std::string& output)
 {
 	std::string prefix = "";

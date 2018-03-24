@@ -176,5 +176,9 @@ int main()
 	for (const auto& element : stackOutput) {
 		stackOut << element;
 	}
+	std::ofstream blockOut("block.txt");
+	std::string blockOutput;
+	visitBlock(tree, blockOutput);
+	blockOut << blockOutput;
 	return 0;
 }
