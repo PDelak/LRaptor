@@ -1,8 +1,8 @@
-# LR parser generator + grammar editor
+# LRaptor parser generator + grammar editor
 
 ### Current work
-			Reduce Actions
-			Extended Context Free Grammar
-			GLR
+	Reduce Actions
+	Extended Context Free Grammar
+	GLR
 
 ![Optional Text](../master/lreditor.png)
