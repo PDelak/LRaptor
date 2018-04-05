@@ -5,4 +5,4 @@
 	Extended Context Free Grammar
 	GLR
 	LookAhead Token
-![Optional Text](../master/lreditor.png)
+![Optional Text](../master/lr-editor.png)
