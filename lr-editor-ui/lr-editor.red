@@ -4,7 +4,7 @@ Red [
 	Needs:	 'View
 ]
 
-#include %lr-library.red
+#include %../lr-library/lr-library.red
 #include %grammar-parser.red
 
 
@@ -128,7 +128,7 @@ editor-view: layout[
 				print input-txt
 				inputValue: copy inputSource/text
 				write %input.txt trim inputValue			
-				call-command: "lrtreevisitor.exe"
+				call-command: "lr-editor-lib-driver.exe"
 				call/wait call-command
 				ptree: read %parseTree.txt
 				parseTree/text: ptree
