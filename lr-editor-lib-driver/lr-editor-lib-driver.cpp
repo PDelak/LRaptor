@@ -1,4 +1,4 @@
-#include "lrlib.h"
+#include "lr-lib.h"
 
 struct scanning_state
 {

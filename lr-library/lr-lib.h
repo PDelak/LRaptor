@@ -177,6 +177,7 @@ std::set<item> lr0goto(const std::set<item>& is, const std::string& token, const
 
 std::string serializeItemSet(const Grammar& grammar, const std::set<item>& closedSet, size_t id)
 {
+	(void)grammar;
     std::string output;
     int index = 0;
     std::stringstream ss;
@@ -410,7 +411,7 @@ bool parse(const std::string& input, const ParseTable& parseTable, const Grammar
 			output.append(ruleIterator->first);
 			parseStack.push_back(std::make_any<std::string>(ruleIterator->first));
 			actionIterator = parseTable.find(std::make_pair(newState, ruleIterator->first));
-			auto state = actionIterator->second.second;
+			state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
 		}
 		else if (action == "a") {
@@ -419,7 +420,6 @@ bool parse(const std::string& input, const ParseTable& parseTable, const Grammar
 			std::advance(ruleIterator, ruleIndex);
 			auto rhsSize = ruleIterator->second.size();
 			for (size_t i = 0; i < rhsSize * 2; ++i) parseStack.pop_back();
-			auto newState = std::any_cast<size_t>(*parseStack.rbegin());
 			output.append(ruleIterator->first);
 			parseStack.push_back(std::make_any<std::string>(ruleIterator->first));		
 			break;
@@ -478,7 +478,7 @@ bool parseTree(const std::string& input, const ParseTable& parseTable, const Gra
 			auto currentState = std::any_cast<size_t>(*parseStack.rbegin());
 			parseStack.push_back(std::make_any<parse_node_ptr>(parent));
 			actionIterator = parseTable.find(std::make_pair(currentState, ruleIterator->first));
-			auto state = actionIterator->second.second;
+			state = actionIterator->second.second;
 			parseStack.push_back(std::make_any<size_t>(state));
 			stackOutput.push_back(parent->token);
 			stackOutput.push_back(toString(state));
@@ -639,7 +639,6 @@ void testGrammar(const Grammar& grammar, const grammar_rule& mainRule, const std
 	parse_node_ptr tree;
 	std::vector<std::string> stackOutput;
 	parseTree(input, parseTable, grammar, tree, stackOutput);
-	size_t indent = 0;
 	std::string visitOutput;
 	visit(tree, visitOutput);
 	std::cout << visitOutput << std::endl;
