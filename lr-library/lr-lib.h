@@ -179,7 +179,7 @@ std::string serializeItemSet(const Grammar& grammar, const std::set<item>& close
 {
 	(void)grammar;
     std::string output;
-    int index = 0;
+    size_t index = 0;
     std::stringstream ss;
     ss << id;
     output += "State ";
