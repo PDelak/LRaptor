@@ -148,7 +148,7 @@ std::set<item> lr0closure(const std::set<item>& is, const Grammar& grammar)
         if (LR0Item.rule.rhs.size() <= LR0Item.dotPosition) continue;
         std::string nextLHSProduction = LR0Item.rule.rhs[LR0Item.dotPosition];
         auto rule_iter = grammar.equal_range(nextLHSProduction);
-        for (rule_iter; rule_iter.first != rule_iter.second; ++rule_iter.first) {
+        for (; rule_iter.first != rule_iter.second; ++rule_iter.first) {
             grammar_rule r(rule_iter.first->first, rule_iter.first->second);
             item newItem(r, 0);
             if(std::find(openItems.begin(), openItems.end(), newItem) == openItems.end() && result.find(newItem) == result.end())
